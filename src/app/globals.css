@@ -1,0 +1,201 @@
+@import "tailwindcss";
+
+/* ─── Design tokens ──────────────────────────────────────────────────────────
+   All colours are driven by CSS custom properties so that flipping the theme
+   is a single class swap on <html>:  html.dark  or  html  (dark default).
+   Light mode overrides live under  html.light.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Dark (default) ── */
+:root {
+  --bg:                  #0b1120;
+  --bg-secondary:        #0f172a;
+  --surface:             rgba(30, 41, 59, 0.75);
+  --surface-hover:       rgba(51, 65, 85, 0.60);
+  --border:              rgba(255, 255, 255, 0.07);
+  --border-solid:        #334155;
+  --text:                #f8fafc;
+  --text-muted:          #94a3b8;
+  --text-subtle:         #64748b;
+  --glow-a:              rgba(37, 99, 235, 0.12);
+  --glow-b:              rgba(124, 58, 237, 0.10);
+  --navbar-bg:           rgba(11, 17, 32, 0.88);
+  --scrollbar-bg:        #0b1120;
+  --scrollbar-thumb:     #334155;
+  --select-bg:           #1e293b;
+  /* predictor-specific */
+  --card-bg:             rgba(15, 23, 42, 0.90);
+  --input-bg:            #0f172a;
+  --toggle-bg:           #0f172a;
+  --toggle-active-bg:    #1e293b;
+  --toggle-active-text:  #f8fafc;
+}
+
+/* ── Light mode ── */
+html.light {
+  --bg:                  #f0f4f8;
+  --bg-secondary:        #e8edf3;
+  --surface:             rgba(255, 255, 255, 0.82);
+  --surface-hover:       rgba(241, 245, 249, 0.90);
+  --border:              rgba(0, 0, 0, 0.07);
+  --border-solid:        #cbd5e1;
+  --text:                #0f172a;
+  --text-muted:          #475569;
+  --text-subtle:         #64748b;
+  --glow-a:              rgba(37, 99, 235, 0.07);
+  --glow-b:              rgba(124, 58, 237, 0.06);
+  --navbar-bg:           rgba(240, 244, 248, 0.92);
+  --scrollbar-bg:        #e2e8f0;
+  --scrollbar-thumb:     #94a3b8;
+  --select-bg:           #f8fafc;
+  /* predictor-specific */
+  --card-bg:             rgba(255, 255, 255, 0.95);
+  --input-bg:            #f8fafc;
+  --toggle-bg:           #e2e8f0;
+  --toggle-active-bg:    #ffffff;
+  --toggle-active-text:  #0f172a;
+}
+
+/* ─── Base ───────────────────────────────────────────────────────────────── */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+    line-height: 1.6;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  /* Remove number-input spinners */
+  input[type='number']::-webkit-inner-spin-button,
+  input[type='number']::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type='number'] {
+    -moz-appearance: textfield;
+  }
+}
+
+/* ─── Utilities ──────────────────────────────────────────────────────────── */
+@layer utilities {
+
+  /* Navbar glass */
+  .glass {
+    background: var(--navbar-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    transition: background 0.25s ease;
+  }
+
+  /* Card glass */
+  .glass-card {
+    background: var(--surface);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+    transition: background 0.25s ease, border-color 0.25s ease;
+  }
+
+  /* ── Static gradient (kept for use elsewhere) ── */
+  .text-gradient {
+    background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 50%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* ── Animated gradient — continuously cycles on hero 'Dream College' ── */
+  .text-gradient-animated {
+    /* Wide gradient so shifting background-position gives a smooth colour sweep */
+    background: linear-gradient(
+      135deg,
+      #3b82f6  0%,
+      #6d28d9  25%,
+      #ec4899  50%,
+      #8b5cf6  75%,
+      #3b82f6 100%
+    );
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientFlow 5s ease-in-out infinite;
+    /* GPU-composited — silky on mobile */
+    will-change: background-position;
+  }
+
+  /* ── Hero heading: very subtle vertical float ── */
+  .hero-heading {
+    animation: heroFloat 6s ease-in-out infinite;
+    will-change: transform;
+    /* respect prefers-reduced-motion */
+    @media (prefers-reduced-motion: reduce) {
+      animation: none;
+    }
+  }
+
+  @keyframes gradientFlow {
+    0%   { background-position: 0%   50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0%   50%; }
+  }
+
+  @keyframes heroFloat {
+    0%,  100% { transform: translateY(0px); }
+    50%        { transform: translateY(-4px); }
+  }
+
+  /* Fade-in utility */
+  .fade-in {
+    animation: fadeIn 0.4s ease forwards;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ─── Scrollbar ──────────────────────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
+::-webkit-scrollbar-track  { background: var(--scrollbar-bg); }
+::-webkit-scrollbar-thumb  { background: var(--scrollbar-thumb); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { opacity: 0.8; }
+
+/* ─── Select option colours ─────────────────────────────────────────────── */
+select option {
+  background-color: var(--select-bg);
+  color: var(--text);
+}
+
+/* ─── Framer-motion mobile fallback ──────────────────────────────────────
+   Some mobile browsers (especially over LAN) may not trigger framer-motion
+   animations. This ensures content becomes visible after a brief delay
+   even if JS animations fail completely.
+───────────────────────────────────────────────────────────────────────── */
+@keyframes ensureVisible {
+  to { opacity: 1; transform: none; }
+}
+
+/* Target elements that framer-motion sets to opacity:0 via inline style.
+   After 1.5s, CSS forces them visible as a safety net. */
+[style*="opacity: 0"],
+[style*="opacity:0"] {
+  animation: ensureVisible 0.5s ease 1.5s forwards;
+}
+
