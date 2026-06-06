@@ -2,9 +2,9 @@ import { CutoffRecord, PredictionLevel, PredictionResult } from '@/types';
 
 /* ─── Chance Bands ────────────────────────────────────────────────────────────
   SAFE       : rank is inside closing cutoff (rank ≤ closingRank)
-  MODERATE   : rank slightly worse than closing cutoff (≤ closingRank * 1.10)
-  RISKY      : rank beyond 10% but within 20% of closing cutoff
-  NO_DATA    : rank more than 20% worse than closing cutoff
+  MODERATE   : rank up to 10% worse than closing cutoff
+  RISKY      : rank 10–15% worse than closing cutoff
+  NO_DATA    : rank more than 15% worse than closing cutoff
 ─────────────────────────────────────────────────────────────────────────────── */
 
 export function calculatePrediction(
@@ -33,7 +33,7 @@ export function calculatePrediction(
     if (percentageOver <= 10) {
       predictionLevel  = 'MODERATE';
       chancePercentage = 50;
-    } else if (percentageOver <= 20) {
+    } else if (percentageOver <= 15) {
       predictionLevel  = 'RISKY';
       chancePercentage = 10;
     } else {
