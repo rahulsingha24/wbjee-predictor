@@ -14,50 +14,62 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
-
-
+  useEffect(() => {
+    console.log('[Login Debug] Setting mounted to true');
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!auth || !isFirebaseConfigured || !mounted) return;
+    console.log('[Login Debug] Checking for redirect result...');
     getRedirectResult(auth).then(async (result) => {
+      console.log('[Login Debug] Redirect result:', result ? 'User found' : 'null');
       if (!result) return;
       await handleAuthResult(result.user);
     }).catch((err) => {
-      console.error('Redirect sign-in error:', err);
-      setError(err.message || 'Failed to sign in. Please try again.');
+      console.error('[Login Debug] Redirect sign-in error:', err);
+      setError(err.message || 'Failed to sign in via redirect. Please try again.');
     });
   }, [mounted, router]);
 
   const handleAuthResult = async (fbUser: any) => {
+    console.log('[Login Debug] handleAuthResult called for user:', fbUser.email);
     let profileComplete = false;
     let displayName = '';
     let joinedAt = new Date().toISOString();
 
-    if (db && fbUser.email) {
-      const snap = await getDoc(doc(db, 'users', fbUser.uid));
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.profileCompleted) {
-          profileComplete = true;
-          displayName = data.displayName || '';
-          joinedAt = data.createdAt?.toDate?.()?.toISOString() || joinedAt;
+    try {
+      if (db && fbUser.email) {
+        console.log('[Login Debug] Fetching user from Firestore...');
+        const snap = await getDoc(doc(db, 'users', fbUser.uid));
+        if (snap.exists()) {
+          console.log('[Login Debug] User exists in Firestore');
+          const data = snap.data();
+          if (data.profileCompleted) {
+            profileComplete = true;
+            displayName = data.displayName || '';
+            joinedAt = data.createdAt?.toDate?.()?.toISOString() || joinedAt;
+          }
           await setDoc(doc(db, 'users', fbUser.uid), { lastLoginAt: serverTimestamp() }, { merge: true });
         } else {
-          await setDoc(doc(db, 'users', fbUser.uid), { lastLoginAt: serverTimestamp() }, { merge: true });
+          console.log('[Login Debug] Creating new user in Firestore');
+          await setDoc(doc(db, 'users', fbUser.uid), {
+            uid: fbUser.uid,
+            email: fbUser.email,
+            loginProvider: 'google',
+            createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+            profileCompleted: false
+          });
         }
-      } else {
-        await setDoc(doc(db, 'users', fbUser.uid), {
-          uid: fbUser.uid,
-          email: fbUser.email,
-          loginProvider: 'google',
-          createdAt: serverTimestamp(),
-          lastLoginAt: serverTimestamp(),
-          profileCompleted: false
-        });
       }
+    } catch (dbError) {
+      console.error('[Login Debug] Database error:', dbError);
+      setError('Database error during login. Make sure Firestore is enabled.');
+      return;
     }
 
+    console.log('[Login Debug] Updating local state and redirecting...');
     login({ 
       name: displayName, 
       email: fbUser.email || '', 
@@ -70,35 +82,41 @@ export default function LoginPage() {
 
   const isMobile = typeof window !== 'undefined' && /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    console.log('[Login Debug] handleGoogleSignIn clicked. isMobile:', isMobile);
     setIsLoading(true);
     setError('');
     try {
       if (auth && isFirebaseConfigured) {
         const provider = new GoogleAuthProvider();
         if (isMobile) {
+          console.log('[Login Debug] Executing signInWithRedirect...');
           await signInWithRedirect(auth, provider);
           return;
         }
         try {
+          console.log('[Login Debug] Executing signInWithPopup...');
           const result = await signInWithPopup(auth, provider);
+          console.log('[Login Debug] signInWithPopup successful!');
           await handleAuthResult(result.user);
         } catch (popupErr: any) {
+          console.error('[Login Debug] popup error:', popupErr.code, popupErr);
           if (popupErr.code === 'auth/popup-blocked') {
-            console.warn('Popup blocked by browser, falling back to redirect sign-in...');
+            console.warn('[Login Debug] Popup blocked by browser, falling back to redirect sign-in...');
             await signInWithRedirect(auth, provider);
           } else {
             throw popupErr;
           }
         }
       } else {
-        // Fallback for dev mode without Firebase
+        console.log('[Login Debug] Firebase not configured, falling back to dev mode');
         login({ name: '', email: 'demo@wbjeepredictor.in', isProfileComplete: false, joinedAt: new Date().toISOString() });
         router.push('/onboarding');
       }
     } catch (err: any) {
-      console.error(err);
-      setError('Failed to sign in with Google. Please try again.');
+      console.error('[Login Debug] Fatal sign-in error:', err);
+      setError(err.message || 'Failed to sign in with Google. Please try again.');
     } finally {
       setIsLoading(false);
     }
