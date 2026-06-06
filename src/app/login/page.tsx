@@ -79,8 +79,17 @@ export default function LoginPage() {
           await signInWithRedirect(auth, provider);
           return;
         }
-        const result = await signInWithPopup(auth, provider);
-        await handleAuthResult(result.user);
+        try {
+          const result = await signInWithPopup(auth, provider);
+          await handleAuthResult(result.user);
+        } catch (popupErr: any) {
+          if (popupErr.code === 'auth/popup-blocked') {
+            console.warn('Popup blocked by browser, falling back to redirect sign-in...');
+            await signInWithRedirect(auth, provider);
+          } else {
+            throw popupErr;
+          }
+        }
       } else {
         // Fallback for dev mode without Firebase
         login({ name: '', email: 'demo@wbjeepredictor.in', isProfileComplete: false, joinedAt: new Date().toISOString() });
