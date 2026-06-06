@@ -98,35 +98,91 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-[90vh] flex items-center justify-center px-4 relative overflow-hidden">
-      {/* glow blob */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-      <div className="absolute top-1/4 right-1/4 w-64 h-64 bg-purple-600/10 rounded-full blur-[80px] pointer-events-none" />
+    <div
+      className="min-h-[90vh] flex items-center justify-center px-4 py-8 relative overflow-hidden"
+      style={{ background: 'var(--bg)' }}
+    >
+      {/* Glow blobs — capped size on mobile */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
+        style={{
+          width: 'min(500px, 90vw)',
+          height: 'min(500px, 90vw)',
+          background: 'rgba(37,99,235,0.10)',
+          filter: 'blur(80px)',
+        }}
+      />
+      <div
+        className="absolute top-1/4 right-1/4 rounded-full pointer-events-none"
+        style={{
+          width: 'min(256px, 60vw)',
+          height: 'min(256px, 60vw)',
+          background: 'rgba(124,58,237,0.09)',
+          filter: 'blur(60px)',
+        }}
+      />
 
-      <div className="glass-card w-full max-w-sm p-8 rounded-3xl relative z-10 border border-slate-700/50 shadow-2xl">
+      {/* Card — centered, constrained, responsive padding */}
+      <div
+        className="glass-card w-full max-w-sm relative z-10 shadow-2xl"
+        style={{
+          padding:      'clamp(24px, 6vw, 32px)',
+          borderRadius: 24,
+          border:       '1px solid var(--border-solid)',
+        }}
+      >
         {/* Avatar icon */}
-        <div className="flex flex-col items-center text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-slate-700/80 border border-slate-600 flex items-center justify-center mb-5">
-            <LogIn className="w-7 h-7 text-slate-300" />
+        <div className="flex flex-col items-center text-center mb-7">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
+            style={{
+              background: 'var(--surface-hover)',
+              border:     '1px solid var(--border-solid)',
+            }}
+          >
+            <LogIn className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-slate-400 text-sm leading-relaxed">
+          <h1
+            className="text-2xl font-bold mb-2"
+            style={{ color: 'var(--text)' }}
+          >
+            Welcome Back
+          </h1>
+          <p
+            className="text-sm leading-relaxed max-w-[240px]"
+            style={{ color: 'var(--text-muted)' }}
+          >
             Sign in to save your favorite colleges.
           </p>
         </div>
 
-        {/* Google button */}
+        {/* Google button — full width */}
         <button
           onClick={handleGoogleSignIn}
           disabled={isLoading}
-          className="w-full bg-white hover:bg-slate-100 text-slate-900 font-semibold py-3.5 px-6 rounded-xl flex items-center justify-center gap-3 transition-all disabled:opacity-60 mb-5"
+          className="w-full font-semibold rounded-xl flex items-center justify-center gap-3 transition-all disabled:opacity-60 mb-5"
+          style={{
+            background:    '#ffffff',
+            color:         '#1e293b',
+            padding:       '14px 20px',
+            minHeight:     '52px',
+            fontSize:      '14px',
+            border:        '1px solid #e2e8f0',
+            cursor:        isLoading ? 'not-allowed' : 'pointer',
+          }}
+          onMouseEnter={(e) => {
+            if (!isLoading) (e.currentTarget as HTMLElement).style.background = '#f1f5f9';
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLElement).style.background = '#ffffff';
+          }}
         >
           {isLoading ? (
             <div className="w-5 h-5 border-2 border-slate-500 border-t-transparent rounded-full animate-spin" />
           ) : (
             <>
               {/* Google G logo */}
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
@@ -137,12 +193,27 @@ export default function LoginPage() {
           )}
         </button>
 
-        {error && <p className="text-red-400 text-sm text-center mb-4">{error}</p>}
+        {error && (
+          <p className="text-red-400 text-sm text-center mb-4">{error}</p>
+        )}
 
         {/* Security note */}
-        <div className="flex items-start gap-2 text-slate-500 text-xs leading-relaxed">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5">
-            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        <div
+          className="flex items-start gap-2 text-xs leading-relaxed"
+          style={{ color: 'var(--text-subtle)' }}
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className="shrink-0 mt-0.5"
+          >
+            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
           <span>Secure, one-tap login. Your data is only used to save your preferences.</span>
         </div>

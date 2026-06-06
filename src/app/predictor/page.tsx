@@ -27,6 +27,7 @@ const ROUND_OPTIONS  = ['All Rounds', 'Round 1', 'Round 2'] as const;
 
 /* ─── Toggle group ─────────────────────────────────────────────────────────
    A pill-style segmented control that adapts to both themes via CSS vars.
+   On very small screens, labels that are too long wrap or shrink gracefully.
 ─────────────────────────────────────────────────────────────────────────── */
 function ToggleGroup<T extends string>({
   options,
@@ -44,9 +45,11 @@ function ToggleGroup<T extends string>({
 
   return (
     <div
-      className="flex rounded-xl p-1 gap-0.5"
+      className={`grid w-full rounded-xl p-1 gap-1 overflow-hidden ${
+  normalised.length === 3 ? "grid-cols-3" : "grid-cols-2"
+}`}
       style={{
-        background:  'var(--toggle-bg)',
+        background:  'var(--input-bg)',
         border:      '1px solid var(--border-solid)',
       }}
     >
@@ -57,17 +60,15 @@ function ToggleGroup<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className="flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            className={`w-full min-w-0 py-2 px-1 rounded-lg text-[10px] sm:text-[11px] font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 whitespace-nowrap overflow-hidden text-ellipsis ${
+              active
+                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_0_12px_rgba(37,99,235,0.3)]'
+                : 'bg-transparent hover:opacity-80'
+            }`}
             style={{
-              background: active ? 'var(--toggle-active-bg)' : 'transparent',
-              color:      active ? 'var(--toggle-active-text)' : 'var(--text-subtle)',
-              boxShadow:  active ? '0 1px 4px rgba(0,0,0,0.18)' : 'none',
-            }}
-            onMouseEnter={(e) => {
-              if (!active) (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)';
-            }}
-            onMouseLeave={(e) => {
-              if (!active) (e.currentTarget as HTMLElement).style.color = 'var(--text-subtle)';
+              color:      active ? '#ffffff' : 'var(--text-muted)',
+              minHeight:  '36px',
+              transition: 'all 0.25s ease',
             }}
           >
             {opt.label}
@@ -107,12 +108,18 @@ export default function PredictorPage() {
   /* Wait for client-side hydration (Zustand reads localStorage) */
   useEffect(() => { setMounted(true); }, []);
 
-  /* Auth guard — only runs after hydration so we don't redirect prematurely */
-  useEffect(() => {
-    if (!mounted) return;
-    if (!user)                       router.push('/login');
-    else if (!user.isProfileComplete) router.push('/onboarding');
-  }, [user, router, mounted]);
+  /* Auth guard removed to prevent Next.js client router hang on mobile.
+     We rely on the conditional UI rendering below instead. */
+
+  /* Rank validation — runs on every keystroke for real-time feedback */
+  const validateRank = useCallback((raw: string): string => {
+    if (!raw) return '';
+    const n = Number(raw);
+    if (isNaN(n) || !Number.isInteger(n)) return `Please enter a whole number.`;
+    if (n < MIN_RANK || n > MAX_RANK)
+      return `Please enter a valid WBJEE rank between ${MIN_RANK.toLocaleString()} and ${MAX_RANK.toLocaleString()}.`;
+    return '';
+  }, []);
 
   /* ── Pre-hydration: show loading spinner ── */
   if (!mounted) {
@@ -127,30 +134,24 @@ export default function PredictorPage() {
   if (!user || !user.isProfileComplete) {
     return (
       <div className="min-h-[calc(100vh-60px)] flex items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
-        <div className="text-center max-w-sm">
+        <div className="text-center max-w-sm w-full">
           <AlertCircle className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-subtle)' }} />
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text)' }}>Login Required</h2>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>Please sign in to use the college predictor.</p>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text)' }}>
+            {!user ? 'Login Required' : 'Profile Required'}
+          </h2>
+          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
+            {!user ? 'Please sign in to use the college predictor.' : 'Please complete your profile to continue.'}
+          </p>
           <a
-            href="/login"
+            href={!user ? '/login' : '/onboarding'}
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-sm transition-all"
           >
-            Go to Login <ArrowRight className="w-4 h-4" />
+            {!user ? 'Go to Login' : 'Complete Profile'} <ArrowRight className="w-4 h-4" />
           </a>
         </div>
       </div>
     );
   }
-
-  /* Rank validation — runs on every keystroke for real-time feedback */
-  const validateRank = useCallback((raw: string): string => {
-    if (!raw) return '';
-    const n = Number(raw);
-    if (isNaN(n) || !Number.isInteger(n)) return `Please enter a whole number.`;
-    if (n < MIN_RANK || n > MAX_RANK)
-      return `Please enter a valid WBJEE rank between ${MIN_RANK.toLocaleString()} and ${MAX_RANK.toLocaleString()}.`;
-    return '';
-  }, []);
 
   const handleRankChange = (raw: string) => {
     setRankRaw(raw);
@@ -179,17 +180,17 @@ export default function PredictorPage() {
   /* ── Render ─────────────────────────────────────────────────────────────── */
   return (
     <div
-      className="min-h-[calc(100vh-60px)] flex items-center justify-center px-4 py-10 relative overflow-hidden"
+      className="min-h-[calc(100vh-60px)] flex-grow flex flex-col items-center justify-center px-4 pt-16 sm:pt-20 pb-20 sm:pb-24 relative overflow-hidden w-full"
       style={{ background: 'var(--bg)' }}
     >
-      {/* Ambient glows */}
+      {/* Ambient glows — matching Home Page exactly */}
       <div
-        className="absolute top-1/3 left-1/4 w-72 h-72 rounded-full pointer-events-none"
-        style={{ background: 'var(--glow-a)', filter: 'blur(100px)' }}
+        className="absolute top-[-12%] left-[-8%] w-[45%] h-[45%] rounded-full pointer-events-none"
+        style={{ background: 'var(--glow-a)', filter: 'blur(60px)' }}
       />
       <div
-        className="absolute bottom-1/4 right-1/4 w-72 h-72 rounded-full pointer-events-none"
-        style={{ background: 'var(--glow-b)', filter: 'blur(100px)' }}
+        className="absolute bottom-[-10%] right-[-8%] w-[40%] h-[40%] rounded-full pointer-events-none"
+        style={{ background: 'var(--glow-b)', filter: 'blur(55px)' }}
       />
 
       <motion.div
@@ -197,34 +198,41 @@ export default function PredictorPage() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.1 }}
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-        className="w-full max-w-[480px] z-10"
+        className="w-full max-w-[720px] z-10"
       >
         {/* ── Page header ── */}
-        <div className="text-center mb-7">
-          <h1
-            className="text-3xl sm:text-4xl font-extrabold tracking-tight leading-tight mb-2"
-            style={{ color: 'var(--text)' }}
-          >
-            Find Colleges for{' '}
-            <span className="text-gradient-animated">Your Rank</span>
-          </h1>
-          <p className="text-sm sm:text-base" style={{ color: 'var(--text-muted)' }}>
-            Get smart WBJEE college predictions using previous-year cutoff trends.
-          </p>
+        <div className="text-center mb-6 sm:mb-8">
+<h1
+  className="text-[1.8rem] sm:text-4xl md:text-5xl font-extrabold tracking-tight leading-[1.15] mb-3"
+  style={{ color: 'var(--text)' }}
+>
+  Discover Your Best
+  <br />
+  <span className="text-gradient-animated">
+    WBJEE College
+  </span>
+</h1>
+<p
+  className="text-sm sm:text-base leading-relaxed max-w-[500px] mx-auto"
+  style={{ color: 'var(--text-muted)' }}
+>
+  Find colleges that match your rank using real WBJEE cutoff data.
+</p>
         </div>
 
-        {/* ── Form card ── */}
-        <div
-          className="rounded-2xl overflow-hidden shadow-xl"
-          style={{
-            background:  'var(--card-bg)',
-            border:      '1px solid var(--border-solid)',
-          }}
-        >
+        <div className="max-w-[480px] mx-auto">
+
+{/* ── Form card ── */}
+  <div
+    className="rounded-2xl overflow-hidden glass-card shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.4)]"
+    style={{
+      border: '1px solid var(--border)',
+    }}
+  >
           {/* Accent top bar */}
           <div className="h-[3px] bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-400" />
 
-          <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-5" noValidate>
+          <form onSubmit={handleSubmit} className="p-5 sm:p-6 lg:p-7 space-y-5" noValidate>
 
             {/* ── RANK ── */}
             <div>
@@ -232,7 +240,7 @@ export default function PredictorPage() {
               <div className="relative">
                 {/* # prefix */}
                 <span
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-lg font-bold select-none pointer-events-none"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-base sm:text-lg font-bold select-none pointer-events-none"
                   style={{ color: 'var(--text-subtle)' }}
                 >
                   #
@@ -247,7 +255,7 @@ export default function PredictorPage() {
                   onChange={(e) => handleRankChange(e.target.value)}
                   placeholder="e.g. 4500"
                   autoComplete="off"
-                  className="w-full pl-10 pr-4 py-3.5 text-2xl font-bold rounded-xl outline-none transition-all duration-200"
+                  className="w-full pl-10 pr-4 py-3.5 text-xl sm:text-2xl font-bold rounded-xl outline-none transition-all duration-200"
                   style={{
                     background:   'var(--input-bg)',
                     border:       `1.5px solid ${rankError ? '#ef4444' : 'var(--border-solid)'}`,
@@ -306,7 +314,7 @@ export default function PredictorPage() {
               </div>
             </div>
 
-            {/* ── QUOTA + SEAT TYPE (side-by-side on sm+, stacked on xs) ── */}
+            {/* ── QUOTA + SEAT TYPE ── stacked always, side-by-side on sm+ ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <FieldLabel>Domicile Quota</FieldLabel>
@@ -340,7 +348,7 @@ export default function PredictorPage() {
             <button
               type="submit"
               disabled={loading || (rankRaw !== '' && !isRankValid)}
-              className="w-full py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+              className="w-full py-4 rounded-xl font-bold text-sm flex items-center justify-center gap-2.5 transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
               style={{
                 background:  isRankValid || !rankRaw
                   ? 'linear-gradient(135deg, #2563eb 0%, #4f46e5 100%)'
@@ -349,6 +357,7 @@ export default function PredictorPage() {
                 boxShadow:   (isRankValid || !rankRaw)
                   ? '0 0 20px rgba(37,99,235,0.30)'
                   : 'none',
+                minHeight:   '52px',
               }}
               onMouseEnter={(e) => {
                 if (!loading && (isRankValid || !rankRaw))
@@ -374,10 +383,12 @@ export default function PredictorPage() {
             </button>
           </form>
         </div>
+      
+      </div>
 
         {/* Footer note */}
-        <p className="text-center text-[11px] mt-4" style={{ color: 'var(--text-subtle)' }}>
-          Based on WBJEE 2025 cutoff data. Predictions are for 2026 admissions.
+        <p className="text-center text-[11px] mt-5 font-medium" style={{ color: 'var(--text-subtle)' }}>
+          Based on WBJEE 2025 cutoff trends for 2026 admission guidance.
         </p>
       </motion.div>
     </div>
