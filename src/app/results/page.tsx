@@ -163,9 +163,6 @@ function ResultsContent() {
   /* Wait for Zustand hydration */
   useEffect(() => { setMounted(true); }, []);
 
-  /* Auth guard removed to prevent Next.js client router hang on mobile.
-     We rely on the conditional UI rendering below instead. */
-
   useEffect(() => {
     if (initRank < 1 || initRank > MAX_RANK) { setLoading(false); return; }
     setLoading(true);
@@ -242,33 +239,8 @@ function ResultsContent() {
     showToast('Results exported successfully');
   };
 
-  /* ── Loading state (pre-hydration) ── */
-  if (!mounted) {
-    return (
-      <div style={{minHeight:'60vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12}}>
-        <Loader2 style={{width:36,height:36,color:'#3b82f6'}} className="animate-spin"/>
-        <p style={{color:'var(--text)',fontWeight:600}}>Loading…</p>
-      </div>
-    );
-  }
-
-  /* ── Not logged in ── */
-  if (!user || !user.isProfileComplete) {
-    return (
-      <div style={{minHeight:'60vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:12,textAlign:'center',padding:'0 16px'}}>
-        <AlertCircle style={{width:48,height:48,color:'var(--text-subtle)'}}/>
-        <h2 style={{fontSize:20,fontWeight:700,color:'var(--text)'}}>
-          {!user ? 'Login Required' : 'Profile Required'}
-        </h2>
-        <p style={{color:'var(--text-muted)',fontSize:14}}>
-          {!user ? 'Please sign in to view prediction results.' : 'Please complete your profile to continue.'}
-        </p>
-        <a href={!user ? "/login" : "/onboarding"} style={{marginTop:8,background:'linear-gradient(135deg,#2563eb,#4f46e5)',color:'#fff',padding:'10px 24px',borderRadius:10,fontWeight:600,fontSize:13,textDecoration:'none'}}>
-          {!user ? 'Go to Login' : 'Complete Profile'}
-        </a>
-      </div>
-    );
-  }
+  /* ── Pre-hydration or auth check ── */
+  if (!mounted || !user || !user.isProfileComplete) return null;
 
   /* ─── Sidebar / Filter panel ─────────────────────────────────────────── */
   const FilterPanel = (

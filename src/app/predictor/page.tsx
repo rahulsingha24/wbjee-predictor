@@ -108,8 +108,9 @@ export default function PredictorPage() {
   /* Wait for client-side hydration (Zustand reads localStorage) */
   useEffect(() => { setMounted(true); }, []);
 
-  /* Auth guard removed to prevent Next.js client router hang on mobile.
-     We rely on the conditional UI rendering below instead. */
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /* Rank validation — runs on every keystroke for real-time feedback */
   const validateRank = useCallback((raw: string): string => {
@@ -121,38 +122,8 @@ export default function PredictorPage() {
     return '';
   }, []);
 
-  /* ── Pre-hydration: show loading spinner ── */
-  if (!mounted) {
-    return (
-      <div className="min-h-[calc(100vh-60px)] flex items-center justify-center" style={{ background: 'var(--bg)' }}>
-        <Loader2 className="w-8 h-8 animate-spin" style={{ color: '#3b82f6' }} />
-      </div>
-    );
-  }
-
-  /* ── Post-hydration: not logged in → show login prompt ── */
-  if (!user || !user.isProfileComplete) {
-    return (
-      <div className="min-h-[calc(100vh-60px)] flex items-center justify-center px-4" style={{ background: 'var(--bg)' }}>
-        <div className="text-center max-w-sm w-full">
-          <AlertCircle className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-subtle)' }} />
-          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--text)' }}>
-            {!user ? 'Login Required' : 'Profile Required'}
-          </h2>
-          <p className="text-sm mb-6" style={{ color: 'var(--text-muted)' }}>
-            {!user ? 'Please sign in to use the college predictor.' : 'Please complete your profile to continue.'}
-          </p>
-          <a
-            href={!user ? '/login' : '/onboarding'}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl font-semibold text-sm transition-all"
-          >
-            {!user ? 'Go to Login' : 'Complete Profile'} <ArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-      </div>
-    );
-  }
-
+  /* ── Pre-hydration or auth-checking: return null ── */
+  if (!mounted || !user || !user.isProfileComplete) return null;
   const handleRankChange = (raw: string) => {
     setRankRaw(raw);
     setRankError(validateRank(raw));
