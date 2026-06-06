@@ -252,6 +252,7 @@ export default function PredictorPage() {
                   max={MAX_RANK}
                   value={rankRaw}
                   onKeyDown={(e) => ['e', 'E', '+', '-', '.'].includes(e.key) && e.preventDefault()}
+                  onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => handleRankChange(e.target.value)}
                   placeholder="e.g. 4500"
                   autoComplete="off"

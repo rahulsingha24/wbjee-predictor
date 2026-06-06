@@ -58,13 +58,20 @@ const normalizeCategoryValue = (category?: string) => {
 
 const mapSupabaseRow = (row: SupabaseRow): CutoffRecord => {
   const normal = normalizeRow(row);
+  const rawCategory = getStringField(normal, 'Category');
+  const normalizedCat = normalizeCategoryValue(rawCategory);
+  
+  const isTFW = normalizedCat === 'TFW' || getStringField(normal, 'Program').includes('TFW');
+  const finalCategory = normalizedCat === 'TFW' ? 'GENERAL' : normalizedCat;
+
   return {
     id: getStringField(normal, 'Sr.No') || getStringField(normal, 'Institute') || '',
     round: getStringField(normal, 'Round'),
     institute: getStringField(normal, 'Institute'),
     program: getStringField(normal, 'Program'),
     quota: getStringField(normal, 'Quota'),
-    category: normalizeCategoryValue(getStringField(normal, 'Category')),
+    category: finalCategory,
+    isTFW: isTFW,
     openingRank: getNumericField(normal, 'Opening Rank'),
     closingRank: getNumericField(normal, 'Closing Rank'),
     stream: getStringField(normal, 'Stream'),
@@ -106,9 +113,16 @@ export async function fetchCutoffsForPrediction(
 
   /* 1. Category — flexible match for variations like Open, GENERAL, TFW, Tuition Fee Waiver */
   const normalizedCategory = normalizeCategoryValue(category);
-  let filtered = allData.filter(
-    item => normalizeCategoryValue(item.category) === normalizedCategory
-  );
+  let filtered = allData.filter(item => {
+    const itemCat = normalizeCategoryValue(item.category);
+    if (normalizedCategory === 'TFW') {
+      return item.isTFW === true;
+    }
+    if (normalizedCategory === 'GENERAL') {
+      return itemCat === 'GENERAL' && !item.isTFW;
+    }
+    return itemCat === normalizedCategory;
+  });
 
   /* 2. Round */
   if (options.round && options.round !== 'All Rounds') {

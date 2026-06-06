@@ -163,6 +163,19 @@ function ResultsContent() {
   /* Wait for Zustand hydration */
   useEffect(() => { setMounted(true); }, []);
 
+  // Sync URL search params to local filter state and reset page/sub-filters when they change
+  useEffect(() => {
+    setLRank(initRank > 0 ? String(initRank) : '');
+    setLCat(initCat);
+    setLQuota(initQuota);
+    setLRound(initRound);
+    setLSeat(initSeat);
+    setLProgram(initProgram);
+    setLDistrict('All');
+    setLChance('All');
+    setPage(1);
+  }, [initRank, initCat, initQuota, initRound, initSeat, initProgram]);
+
   /* Auth guard removed to prevent Next.js client router hang on mobile.
      We rely on the conditional UI rendering below instead. */
 
@@ -199,7 +212,7 @@ function ResultsContent() {
   const filtered = useMemo(() => results.filter(r => {
     if (lProgram !== 'All' && r.program !== lProgram) return false;
     if (lDistrict!== 'All' && r.district!== lDistrict) return false;
-    if (lChance  !== 'All' && r.predictionLevel !== lChance) return false;
+    if (lChance !== 'All' && r.predictionLevel !== lChance) return false;
     return true;
   }), [results, lProgram, lDistrict, lChance]);
 
@@ -220,8 +233,17 @@ function ResultsContent() {
   }, [lRank, lCat, lQuota, lSeat, lRound, router]);
 
   const handleReset = () => {
-    setLProgram('All'); setLDistrict('All'); setLChance('All');
+    setLRank('');
+    setLCat('GENERAL');
+    setLQuota('Home State');
+    setLRound('All Rounds');
+    setLSeat('WBJEE Seats');
+    setLProgram('All');
+    setLDistrict('All');
+    setLChance('All');
     setPage(1);
+    setRankErr('');
+    router.push('/predictor');
   };
 
   const handleShare = async () => {
@@ -300,6 +322,7 @@ function ResultsContent() {
             max={MAX_RANK}
             value={lRank}
             onKeyDown={e=>['e','E','+','-','.'].includes(e.key)&&e.preventDefault()}
+            onWheel={e => e.currentTarget.blur()}
             onChange={e=>{setLRank(e.target.value);setRankErr('');}}
             placeholder="e.g. 5420"
             style={{
@@ -341,6 +364,16 @@ function ResultsContent() {
           <SSelect value={lSeat} onChange={setLSeat}>
             <option value="WBJEE Seats">WBJEE Seats</option>
             <option value="JEE(Main) Seats">JEE(Main) Seats</option>
+          </SSelect>
+        </div>
+
+        {/* Round */}
+        <div>
+          <SLabel>Round</SLabel>
+          <SSelect value={lRound} onChange={setLRound}>
+            <option value="All Rounds">All Rounds</option>
+            <option value="Round 1">Round 1</option>
+            <option value="Round 2">Round 2</option>
           </SSelect>
         </div>
 
@@ -613,16 +646,7 @@ function ResultsContent() {
         </div>
       </div>
 
-      {/* ── Floating Filter FAB (mobile only) — visible only when bottom-sheet closed ── */}
-      {!bottomSheetOpen && !isInvalid && (
-        <button
-          className="filter-fab lg:hidden"
-          onClick={() => setBottomSheetOpen(true)}
-          aria-label="Open filters"
-        >
-          <SlidersHorizontal style={{width:15,height:15}}/> Filters
-        </button>
-      )}
+      {/* Removed Floating Filter FAB */}
     </div>
   );
 }
