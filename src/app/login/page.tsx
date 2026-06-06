@@ -25,6 +25,7 @@ export default function LoginPage() {
       await handleAuthResult(result.user);
     }).catch((err) => {
       console.error('Redirect sign-in error:', err);
+      setError(err.message || 'Failed to sign in. Please try again.');
     });
   }, [mounted, router]);
 
