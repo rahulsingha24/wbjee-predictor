@@ -85,36 +85,37 @@ export default function LoginPage() {
   const handleGoogleSignIn = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
     console.log('[Login Debug] handleGoogleSignIn clicked.');
-    setIsLoading(true);
     setError('');
+
+    if (!auth || !isFirebaseConfigured) {
+      console.log('[Login Debug] Firebase not configured, falling back to dev mode');
+      login({ name: '', email: 'demo@wbjeepredictor.in', isProfileComplete: false, joinedAt: new Date().toISOString() });
+      router.push('/onboarding');
+      return;
+    }
+
     try {
-      if (auth && isFirebaseConfigured) {
+      const provider = new GoogleAuthProvider();
+      console.log('[Login Debug] Executing signInWithPopup immediately...');
+      
+      // Do NOT call setIsLoading(true) before this, it will make it async and block the popup!
+      const result = await signInWithPopup(auth, provider);
+      
+      console.log('[Login Debug] signInWithPopup successful!');
+      setIsLoading(true);
+      await handleAuthResult(result.user);
+      
+    } catch (popupErr: any) {
+      console.error('[Login Debug] popup error:', popupErr.code, popupErr);
+      if (popupErr.code === 'auth/popup-blocked') {
+        console.warn('[Login Debug] Popup blocked! Falling back to redirect sign-in...');
+        setIsLoading(true);
         const provider = new GoogleAuthProvider();
-        
-        try {
-          console.log('[Login Debug] Executing signInWithPopup...');
-          const result = await signInWithPopup(auth, provider);
-          console.log('[Login Debug] signInWithPopup successful!');
-          await handleAuthResult(result.user);
-        } catch (popupErr: any) {
-          console.error('[Login Debug] popup error:', popupErr.code, popupErr);
-          if (popupErr.code === 'auth/popup-blocked') {
-            console.warn('[Login Debug] Popup blocked by browser, falling back to redirect sign-in...');
-            await signInWithRedirect(auth, provider);
-          } else {
-            throw popupErr;
-          }
-        }
+        await signInWithRedirect(auth, provider);
       } else {
-        console.log('[Login Debug] Firebase not configured, falling back to dev mode');
-        login({ name: '', email: 'demo@wbjeepredictor.in', isProfileComplete: false, joinedAt: new Date().toISOString() });
-        router.push('/onboarding');
+        setError(popupErr.message || 'Failed to sign in with Google. Please try again.');
+        setIsLoading(false);
       }
-    } catch (err: any) {
-      console.error('[Login Debug] Fatal sign-in error:', err);
-      setError(err.message || 'Failed to sign in with Google. Please try again.');
-    } finally {
-      setIsLoading(false);
     }
   };
 

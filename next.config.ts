@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async rewrites() {
+    return [
+      {
+        source: '/__/auth/:path*',
+        destination: 'https://future-engineers-54ad2.firebaseapp.com/__/auth/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
