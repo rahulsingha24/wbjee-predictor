@@ -240,6 +240,21 @@ export default function ResultCard({ college, userRank }: { college: PredictionR
             TFW
           </span>
         )}
+        {college.isPWD && (
+          <span
+            style={{
+              fontSize:     11,
+              padding:      '2px 8px',
+              borderRadius: 50,
+              background:   'rgba(59,130,246,0.10)',
+              color:        '#3b82f6',
+              border:       '1px solid rgba(59,130,246,0.25)',
+              whiteSpace:   'nowrap',
+            }}
+          >
+            PwD
+          </span>
+        )}
       </div>
     </div>
   );
