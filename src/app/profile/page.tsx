@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { LogOut, Edit3, Check, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { signOut, updateProfile as firebaseUpdateProfile } from 'firebase/auth';
+import { doc, updateDoc, serverTimestamp, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 
 export default function ProfilePage() {
   const { user, logout, updateProfile } = useUserStore();
@@ -15,6 +16,9 @@ export default function ProfilePage() {
   const [mounted, setMounted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState('');
+  const [editError, setEditError] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [toast, setToast] = useState('');
 
   useEffect(() => {
     setMounted(true);
@@ -40,19 +44,101 @@ export default function ProfilePage() {
 
   const startEdit = () => {
     setEditName(user.name);
+    setEditError('');
     setIsEditing(true);
   };
 
   const cancelEdit = () => {
     setIsEditing(false);
     setEditName('');
+    setEditError('');
   };
 
-  const saveEdit = () => {
-    if (editName.trim() && editName.trim() !== user.name) {
-      updateProfile({ name: editName.trim() });
+  // Validates name using the same rules as onboarding
+  const validateName = (val: string): string => {
+    const trimmed = val.trim();
+    if (!trimmed) return 'Please enter your name.';
+    if (trimmed.length < 2) return 'Name must be at least 2 characters long.';
+    if (trimmed.length > 50) return 'Name must be 50 characters or less.';
+    if (/[^a-zA-Z\s]/.test(trimmed)) return 'Name can contain only letters and spaces.';
+    return '';
+  };
+
+  // Formats to Title Case unless fully uppercase
+  const formatName = (val: string): string => {
+    const trimmed = val.trim().replace(/\s{2,}/g, ' ');
+    if (trimmed === trimmed.toUpperCase()) return trimmed; // allow ALL CAPS
+    return trimmed.split(' ').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1).toLowerCase() : '').join(' ');
+  };
+
+  const saveEdit = async () => {
+    const validationError = validateName(editName);
+    if (validationError) {
+      setEditError(validationError);
+      return;
     }
-    setIsEditing(false);
+
+    const finalName = formatName(editName);
+
+    // No change — just exit edit mode silently
+    if (finalName === user.name) {
+      setIsEditing(false);
+      return;
+    }
+
+    setIsSaving(true);
+    setEditError('');
+
+    try {
+      const uid = auth?.currentUser?.uid;
+
+      // 1. Write to Firestore users/{uid} (source of truth)
+      if (db && uid) {
+        await updateDoc(doc(db, 'users', uid), {
+          displayName: finalName,
+          name: finalName,
+          updatedAt: serverTimestamp(),
+          profileCompleted: true,
+        });
+
+        // 2. Batch-update all existing feedback documents for this uid
+        const feedbackQuery = query(
+          collection(db, 'feedback'),
+          where('uid', '==', uid)
+        );
+        const feedbackSnap = await getDocs(feedbackQuery);
+
+        if (!feedbackSnap.empty) {
+          const batch = writeBatch(db);
+          feedbackSnap.forEach((feedbackDoc) => {
+            batch.update(feedbackDoc.ref, {
+              userName: finalName,
+              userDisplayName: finalName,
+              updatedUserNameAt: serverTimestamp(),
+            });
+          });
+          await batch.commit();
+        }
+      }
+
+      // 3. Update Firebase Auth profile
+      if (auth?.currentUser) {
+        await firebaseUpdateProfile(auth.currentUser, { displayName: finalName });
+      }
+
+      // 4. Update local Zustand store immediately
+      updateProfile({ name: finalName, isProfileComplete: true });
+
+      setIsEditing(false);
+      setEditName('');
+      setToast('Name updated successfully.');
+      setTimeout(() => setToast(''), 3000);
+    } catch (err) {
+      console.error('Failed to update name:', err);
+      setEditError('Failed to save. Please try again.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -101,25 +187,38 @@ export default function ProfilePage() {
           {/* Name Section */}
           <div className="mb-2">
             {isEditing ? (
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <input 
-                  type="text" 
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="px-3 py-2 rounded-lg text-center font-bold text-lg sm:text-xl outline-none"
-                  style={{
-                    background: 'var(--input-bg)',
-                    border: '1.5px solid var(--border-solid)',
-                    color: 'var(--text)'
-                  }}
-                  autoFocus
-                />
-                <button onClick={saveEdit} className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-colors">
-                  <Check className="w-5 h-5" />
-                </button>
-                <button onClick={cancelEdit} className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors">
-                  <X className="w-5 h-5" />
-                </button>
+              <div className="mb-2">
+                <div className="flex items-center justify-center gap-2">
+                  <input 
+                    type="text" 
+                    value={editName}
+                    onChange={(e) => { setEditName(e.target.value); setEditError(''); }}
+                    className="px-3 py-2 rounded-lg text-center font-bold text-lg sm:text-xl outline-none"
+                    style={{
+                      background: 'var(--input-bg)',
+                      border: `1.5px solid ${editError ? '#ef4444' : 'var(--border-solid)'}`,
+                      color: 'var(--text)'
+                    }}
+                    maxLength={50}
+                    disabled={isSaving}
+                    autoFocus
+                  />
+                  <button
+                    onClick={saveEdit}
+                    disabled={isSaving}
+                    className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition-colors disabled:opacity-60"
+                  >
+                    {isSaving
+                      ? <div className="w-5 h-5 border-2 border-emerald-500/40 border-t-emerald-500 rounded-full animate-spin" />
+                      : <Check className="w-5 h-5" />}
+                  </button>
+                  <button onClick={cancelEdit} disabled={isSaving} className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-colors disabled:opacity-60">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                {editError && (
+                  <p className="text-red-500 text-xs mt-1.5 text-center">{editError}</p>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -170,6 +269,16 @@ export default function ProfilePage() {
           </button>
         </div>
       </motion.div>
+
+      {/* Success toast */}
+      {toast && (
+        <div
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-xl text-sm font-semibold text-white shadow-lg"
+          style={{ background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 4px 20px rgba(16,185,129,0.35)' }}
+        >
+          ✓ {toast}
+        </div>
+      )}
     </div>
   );
 }

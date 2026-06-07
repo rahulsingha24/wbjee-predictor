@@ -4,7 +4,7 @@ import { useUserStore } from '@/store/userStore';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { Send, MessageSquare, ChevronDown, Loader2 } from 'lucide-react';
-import { db, isFirebaseConfigured } from '@/lib/firebase';
+import { db, isFirebaseConfigured, auth } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import { motion } from 'framer-motion';
 
@@ -25,6 +25,7 @@ export default function FeedbackPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => { setMounted(true); }, []);
 
@@ -36,8 +37,12 @@ export default function FeedbackPage() {
       newErrors.type = 'Please select an issue type.';
       valid = false;
     }
-    if (!formData.message.trim()) {
+    const trimmedMessage = formData.message.trim();
+    if (!trimmedMessage) {
       newErrors.message = 'Please describe the issue or suggestion.';
+      valid = false;
+    } else if (trimmedMessage.length < 10) {
+      newErrors.message = 'Message must be at least 10 characters.';
       valid = false;
     }
 
@@ -50,25 +55,29 @@ export default function FeedbackPage() {
     if (!validate()) return;
 
     setIsSubmitting(true);
+    setSubmitError('');
 
     try {
       if (isFirebaseConfigured && db) {
+        const uid = auth?.currentUser?.uid || '';
         await addDoc(collection(db, 'feedback'), {
-          type: formData.type,
-          message: formData.message,
-          userEmail: user?.email || 'Anonymous',
+          uid,
           userName: user?.name || 'Anonymous',
+          userEmail: user?.email || 'Anonymous',
+          issueType: formData.type,
+          message: formData.message.trim(),
           createdAt: serverTimestamp(),
+          status: 'new',
         });
       }
-      
+
       setSuccess(true);
       setTimeout(() => {
         router.push('/');
       }, 1500);
     } catch (err) {
       console.error('Failed to submit feedback:', err);
-      alert('Failed to submit feedback. Please try again later.');
+      setSubmitError('Failed to submit feedback. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -183,6 +192,9 @@ export default function FeedbackPage() {
               </div>
 
             <div className="pt-2">
+              {submitError && (
+                <p className="text-red-500 text-sm mb-3 text-center font-medium">{submitError}</p>
+              )}
               <button
                 type="submit"
                 disabled={isSubmitting || success}
