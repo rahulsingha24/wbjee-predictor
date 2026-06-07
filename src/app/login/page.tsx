@@ -84,17 +84,13 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async (e?: React.MouseEvent) => {
     if (e) e.preventDefault();
-    console.log('[Login Debug] handleGoogleSignIn clicked. isMobile:', isMobile);
+    console.log('[Login Debug] handleGoogleSignIn clicked.');
     setIsLoading(true);
     setError('');
     try {
       if (auth && isFirebaseConfigured) {
         const provider = new GoogleAuthProvider();
-        if (isMobile) {
-          console.log('[Login Debug] Executing signInWithRedirect...');
-          await signInWithRedirect(auth, provider);
-          return;
-        }
+        
         try {
           console.log('[Login Debug] Executing signInWithPopup...');
           const result = await signInWithPopup(auth, provider);
