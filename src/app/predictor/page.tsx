@@ -1,24 +1,24 @@
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useUserStore } from '@/store/userStore';
 import { AlertCircle, ChevronDown, Loader2, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import { getCategoriesWithPwd } from '@/lib/db';
 
 /* ─── Constants ───────────────────────────────────────────────────────────── */
 const MAX_RANK = 150000;
 const MIN_RANK = 1;
 
-// Re-ordered exactly as requested: General, EWS, OBC-A, OBC-B, SC, ST
 const CATEGORIES: { value: string; label: string }[] = [
-  { value: 'GENERAL', label: 'General (Open)' },
-  { value: 'EWS',     label: 'EWS'            },
-  { value: 'OBC-A',   label: 'OBC-A'          },
-  { value: 'OBC-B',   label: 'OBC-B'          },
-  { value: 'SC',      label: 'SC'             },
-  { value: 'ST',      label: 'ST'             },
-  { value: 'TFW',     label: 'TFW'            },
+  { value: 'GENERAL',     label: 'General (Open)' },
+  { value: 'GENERAL_TFW', label: 'General + TFW'  },
+  { value: 'EWS',         label: 'EWS'            },
+  { value: 'OBC-A',       label: 'OBC-A'          },
+  { value: 'OBC-B',       label: 'OBC-B'          },
+  { value: 'SC',          label: 'SC'             },
+  { value: 'ST',          label: 'ST'             },
 ];
 
 const QUOTA_OPTIONS  = ['Home State', 'All India'] as const;
@@ -101,16 +101,21 @@ export default function PredictorPage() {
   const [quota,    setQuota]    = useState<'Home State' | 'All India'>('Home State');
   const [seatType, setSeatType] = useState<'WBJEE Seats' | 'JEE(Main) Seats'>('WBJEE Seats');
   const [round,    setRound]    = useState<'All Rounds' | 'Round 1' | 'Round 2'>('All Rounds');
+  const [pwd,      setPwd]      = useState(false);
   const [rankError, setRankError] = useState('');
   const [loading,   setLoading]   = useState(false);
   const [mounted,   setMounted]   = useState(false);
+
+  const categoriesWithPwd = useMemo(() => getCategoriesWithPwd(), []);
 
   /* Wait for client-side hydration (Zustand reads localStorage) */
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (!categoriesWithPwd.includes(category)) {
+      setPwd(false);
+    }
+  }, [category, categoriesWithPwd]);
 
   /* Rank validation — runs on every keystroke for real-time feedback */
   const validateRank = useCallback((raw: string): string => {
@@ -144,6 +149,7 @@ export default function PredictorPage() {
       quota,
       seatType,
       round,
+      pwd:       pwd ? 'true' : 'false',
     });
     router.push(`/results?${params.toString()}`);
   };
@@ -285,6 +291,26 @@ export default function PredictorPage() {
                 />
               </div>
             </div>
+
+            {/* ── PWD CHECKBOX ── */}
+            {categoriesWithPwd.includes(category) && (
+              <div className="flex items-center gap-3 py-2">
+                <input
+                  type="checkbox"
+                  id="pwdCheck"
+                  checked={pwd}
+                  onChange={(e) => setPwd(e.target.checked)}
+                  className="w-5 h-5 rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  style={{
+                    background: 'var(--input-bg)',
+                    borderColor: 'var(--border-solid)'
+                  }}
+                />
+                <label htmlFor="pwdCheck" className="text-sm font-semibold cursor-pointer select-none" style={{ color: 'var(--text)' }}>
+                  Person with Disability (PwD)
+                </label>
+              </div>
+            )}
 
             {/* ── QUOTA + SEAT TYPE ── stacked always, side-by-side on sm+ ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

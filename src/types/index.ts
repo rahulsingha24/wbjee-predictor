@@ -10,6 +10,7 @@ export interface CutoffRecord {
   district?: string;
   type?: string;
   isTFW?: boolean;
+  isPWD?: boolean;
   stream?: string;
   seatType?: string;
 }

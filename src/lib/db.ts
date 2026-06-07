@@ -82,8 +82,13 @@ const mapSupabaseRow = (row: SupabaseRow): CutoffRecord => {
 /* ─── Raw data loader ────────────────────────────────────────────────────── */
 export async function fetchAllCutoffs(): Promise<CutoffRecord[]> {
   // Use local data which is complete and verified
-  // Supabase table is incomplete (missing entries in certain categories/quotas)
-  return localCutoffs as CutoffRecord[];
+  return (localCutoffs as any[]).map(item => ({
+    ...item,
+    openingRank: typeof item.openingRank === 'string' ? parseInt(item.openingRank.replace(/,/g, ''), 10) || 0 : item.openingRank,
+    closingRank: typeof item.closingRank === 'string' ? parseInt(item.closingRank.replace(/,/g, ''), 10) || 0 : item.closingRank,
+    isTFW: typeof item.isTFW === 'string' ? item.isTFW.toUpperCase() === 'TRUE' : !!item.isTFW,
+    isPWD: typeof item.isPWD === 'string' ? item.isPWD.toUpperCase() === 'TRUE' : !!item.isPWD,
+  })) as CutoffRecord[];
 }
 
 /* ─── Prediction fetch ───────────────────────────────────────────────────── */
@@ -95,6 +100,8 @@ export async function fetchCutoffsForPrediction(
     type?:      string;
     program?:   string;
     district?:  string;
+    pwd?:       boolean;
+    seatType?:  string;
   }
 ): Promise<CutoffRecord[]> {
 
@@ -111,17 +118,45 @@ export async function fetchCutoffsForPrediction(
     return a === b || a.includes(b) || b.includes(a);
   };
 
-  /* 1. Category — flexible match for variations like Open, GENERAL, TFW, Tuition Fee Waiver */
-  const normalizedCategory = normalizeCategoryValue(category);
+  /* 1. Category — Support PWD and GENERAL_TFW correctly based on row data */
   let filtered = allData.filter(item => {
-    const itemCat = normalizeCategoryValue(item.category);
-    if (normalizedCategory === 'TFW') {
-      return item.isTFW === true;
+    const rawCat = (item.category || '').trim();
+    let rowBaseCat = '';
+    
+    if (rawCat.includes('Open')) rowBaseCat = 'GENERAL';
+    else if (rawCat.includes('OBC - A')) rowBaseCat = 'OBC-A';
+    else if (rawCat.includes('OBC - B')) rowBaseCat = 'OBC-B';
+    else if (rawCat.includes('SC')) rowBaseCat = 'SC';
+    else if (rawCat.includes('ST')) rowBaseCat = 'ST';
+    else if (rawCat.includes('EWS')) rowBaseCat = 'EWS';
+    else if (rawCat === 'Tuition Fee Waiver') rowBaseCat = 'TFW';
+    
+    const isRowPWD = item.isPWD === true || rawCat.includes('PwD');
+    const isRowTFW = item.isTFW === true || rawCat === 'Tuition Fee Waiver';
+    
+    const isUserPWD = options.pwd === true;
+    
+    if (category === 'GENERAL_TFW') {
+       if (isUserPWD) {
+           if (isRowTFW) return true; // User wants TFW + PwD seats
+           if (rowBaseCat === 'GENERAL') return isRowPWD;
+           return false;
+       }
+       if (isRowTFW) return true; // Match TFW seats
+       if (rowBaseCat === 'GENERAL') {
+           if (isRowPWD) return false;
+           return true; 
+       }
+       return false;
     }
-    if (normalizedCategory === 'GENERAL') {
-      return itemCat === 'GENERAL' && !item.isTFW;
+    
+    if (rowBaseCat === category) {
+       if (isUserPWD) return isRowPWD; // ONLY return PwD seats if user checked PwD
+       if (isRowPWD) return false;     // Hide PwD seats if user didn't check PwD
+       return true;
     }
-    return itemCat === normalizedCategory;
+    
+    return false;
   });
 
   /* 2. Round */
@@ -129,9 +164,19 @@ export async function fetchCutoffsForPrediction(
     filtered = filtered.filter(item => matchesText(item.round, options.round));
   }
 
-  /* 3. Quota — strict separation: Home State ≠ All India */
+  /* 3. Quota — Home State candidates can also apply for All India seats */
   if (options.quota && options.quota !== 'All' && options.quota !== 'All Quotas') {
-    filtered = filtered.filter(item => matchesText(item.quota, options.quota));
+    if (options.quota === 'Home State') {
+      filtered = filtered.filter(item => matchesText(item.quota, 'Home State') || matchesText(item.quota, 'All India'));
+    } else {
+      filtered = filtered.filter(item => matchesText(item.quota, options.quota));
+    }
+  }
+
+  /* Seat Type */
+  if (options.seatType && options.seatType !== 'All') {
+    // some cutoffs have `officialSeatType` and some might use `seatType` from old mappings
+    filtered = filtered.filter(item => matchesText((item as any).officialSeatType || item.seatType, options.seatType));
   }
 
   /* 4. Institute type */
@@ -165,4 +210,25 @@ export async function fetchCutoffsForPrediction(
 export const getUniqueValues = async (key: keyof CutoffRecord) => {
   const data = await fetchAllCutoffs();
   return Array.from(new Set(data.map(item => String(item[key] ?? '')))).sort();
+};
+
+export const getCategoriesWithPwd = (): string[] => {
+  const pwdCats = new Set<string>();
+  (localCutoffs as any[]).forEach(item => {
+    const isRowPWD = item.isPWD === 'TRUE' || item.isPWD === true || (item.category || '').includes('PwD');
+    if (isRowPWD) {
+      const rawCat = (item.category || '').trim();
+      if (rawCat.includes('Open')) pwdCats.add('GENERAL');
+      else if (rawCat.includes('OBC - A')) pwdCats.add('OBC-A');
+      else if (rawCat.includes('OBC - B')) pwdCats.add('OBC-B');
+      else if (rawCat.includes('SC')) pwdCats.add('SC');
+      else if (rawCat.includes('ST')) pwdCats.add('ST');
+      else if (rawCat.includes('EWS')) pwdCats.add('EWS');
+    }
+  });
+  // GENERAL_TFW uses GENERAL's PwD seats too
+  if (pwdCats.has('GENERAL')) {
+    pwdCats.add('GENERAL_TFW');
+  }
+  return Array.from(pwdCats);
 };

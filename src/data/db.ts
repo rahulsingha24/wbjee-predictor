@@ -9,11 +9,12 @@ export type CutoffRecord = {
   openingRank: number;
   closingRank: number;
   isTFW: boolean;
+  isPWD: boolean;
   type: string;
   district: string;
 };
 
-export const datasets = cutoffsData as CutoffRecord[];
+export const datasets = cutoffsData as unknown as CutoffRecord[];
 
 // Extract unique values for filters
 export const getUniqueValues = (key: keyof CutoffRecord) => {

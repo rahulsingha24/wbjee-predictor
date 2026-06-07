@@ -3,18 +3,18 @@ import { PredictionResult } from '@/types';
 
 const LEVEL_LABELS: Record<string, string> = {
   GUARANTEED: 'Guaranteed',
-  SAFE:       'Safe',
-  MODERATE:   'Moderate',
-  RISKY:      'Risky',
-  HIGH:       'High Chance',
-  LOW:        'Low Chance',
-  VERY_LOW:   'Very Low Chance',
-  NO_DATA:    'No Data',
+  SAFE: 'Safe',
+  MODERATE: 'Moderate',
+  RISKY: 'Risky',
+  HIGH: 'High Chance',
+  LOW: 'Low Chance',
+  VERY_LOW: 'Very Low Chance',
+  NO_DATA: 'No Data',
 };
 
 export function generatePredictionPDF(
   results: PredictionResult[],
-  userInfo: { rank: number; category: string; quota: string; tfwStatus: string; name?: string }
+  userInfo: { rank: number; category: string; quota: string; tfwStatus: string; name?: string; pwdStatus?: boolean }
 ) {
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.width;
@@ -27,6 +27,7 @@ export function generatePredictionPDF(
   doc.rect(0, 0, pageW, 32, 'F');
   doc.setFontSize(20);
   doc.setTextColor(255, 255, 255);
+  doc.text('Future Engineers', margin, 10);
   doc.text('WBJEE College Predictor 2026', margin, 18);
   doc.setFontSize(9);
   doc.setTextColor(200, 220, 255);
@@ -47,6 +48,7 @@ export function generatePredictionPDF(
     `Category: ${userInfo.category}`,
     `Quota: ${userInfo.quota}`,
     `TFW: ${userInfo.tfwStatus}`,
+    `PwD: ${userInfo.pwdStatus ? 'Yes' : 'No'}`,
   ];
 
   infoItems.forEach(item => {
@@ -64,15 +66,15 @@ export function generatePredictionPDF(
 
   // Column layout
   const cols = {
-    num:    { x: margin,              w: 8   },
-    name:   { x: margin + 8,         w: 54  },
-    branch: { x: margin + 62,        w: 42  },
-    or:     { x: margin + 104,       w: 16  },
-    cr:     { x: margin + 120,       w: 16  },
-    cat:    { x: margin + 136,       w: 14  },
-    quota:  { x: margin + 150,       w: 14  },
-    tfw:    { x: margin + 164,       w: 10  },
-    chance: { x: margin + 174,       w: 12  },
+    num: { x: margin, w: 8 },
+    name: { x: margin + 8, w: 54 },
+    branch: { x: margin + 62, w: 42 },
+    or: { x: margin + 104, w: 16 },
+    cr: { x: margin + 120, w: 16 },
+    cat: { x: margin + 136, w: 14 },
+    quota: { x: margin + 150, w: 14 },
+    tfw: { x: margin + 164, w: 10 },
+    chance: { x: margin + 174, w: 12 },
   };
 
   // Header row
@@ -81,15 +83,15 @@ export function generatePredictionPDF(
   doc.setFontSize(7);
   doc.setTextColor(71, 85, 105);
 
-  doc.text('#',        cols.num.x,    y);
-  doc.text('College',  cols.name.x,   y);
-  doc.text('Branch',   cols.branch.x, y);
-  doc.text('OR',       cols.or.x,     y);
-  doc.text('CR',       cols.cr.x,     y);
-  doc.text('Cat',      cols.cat.x,    y);
-  doc.text('Quota',    cols.quota.x,  y);
-  doc.text('TFW',      cols.tfw.x,    y);
-  doc.text('Chance',   cols.chance.x, y);
+  doc.text('#', cols.num.x, y);
+  doc.text('College', cols.name.x, y);
+  doc.text('Branch', cols.branch.x, y);
+  doc.text('OR', cols.or.x, y);
+  doc.text('CR', cols.cr.x, y);
+  doc.text('Cat', cols.cat.x, y);
+  doc.text('Quota', cols.quota.x, y);
+  doc.text('Spl.', cols.tfw.x, y);
+  doc.text('Chance', cols.chance.x, y);
   y += 6;
 
   // Data rows
@@ -107,15 +109,15 @@ export function generatePredictionPDF(
       doc.rect(margin, y - 4, contentW, 7, 'F');
       doc.setFontSize(7);
       doc.setTextColor(71, 85, 105);
-      doc.text('#',        cols.num.x,    y);
-      doc.text('College',  cols.name.x,   y);
-      doc.text('Branch',   cols.branch.x, y);
-      doc.text('OR',       cols.or.x,     y);
-      doc.text('CR',       cols.cr.x,     y);
-      doc.text('Cat',      cols.cat.x,    y);
-      doc.text('Quota',    cols.quota.x,  y);
-      doc.text('TFW',      cols.tfw.x,    y);
-      doc.text('Chance',   cols.chance.x, y);
+      doc.text('#', cols.num.x, y);
+      doc.text('College', cols.name.x, y);
+      doc.text('Branch', cols.branch.x, y);
+      doc.text('OR', cols.or.x, y);
+      doc.text('CR', cols.cr.x, y);
+      doc.text('Cat', cols.cat.x, y);
+      doc.text('Quota', cols.quota.x, y);
+      doc.text('Spl.', cols.tfw.x, y);
+      doc.text('Chance', cols.chance.x, y);
       y += 6;
     }
 
@@ -137,7 +139,12 @@ export function generatePredictionPDF(
 
     const quotaShort = r.quota === 'Home State' ? 'HS' : 'AI';
     doc.text(quotaShort, cols.quota.x, y);
-    doc.text(r.isTFW ? 'Yes' : 'No', cols.tfw.x, y);
+
+    let splText = '-';
+    if (r.isTFW && r.isPWD) splText = 'T+P';
+    else if (r.isTFW) splText = 'TFW';
+    else if (r.isPWD) splText = 'PwD';
+    doc.text(splText, cols.tfw.x, y);
 
     // Chance with color
     const chanceLabel = LEVEL_LABELS[r.predictionLevel] || r.predictionLevel;
