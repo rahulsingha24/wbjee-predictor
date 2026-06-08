@@ -174,6 +174,7 @@ function ResultsContent() {
 
     if (trimmed === "All Programs") return "All";
     if (trimmed === "All Quotas") return "All";
+    if (trimmed === "All Types") return "All";
     if (trimmed === "Open") return "GENERAL";
     if (trimmed === "Tuition Fee Waiver") return "TFW";
     if (trimmed === "OBC - A" || trimmed === "OBC-A") return "OBC-A";
@@ -215,8 +216,6 @@ function ResultsContent() {
   const [lType, setLType] = useState(initType);
   const [rankErr, setRankErr] = useState("");
 
-  const categoriesWithPwd = useMemo(() => getCategoriesWithPwd(), []);
-
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -245,12 +244,6 @@ function ResultsContent() {
     initChance,
     initType,
   ]);
-
-  useEffect(() => {
-    if (!categoriesWithPwd.includes(lCat)) {
-      setLPwd(false);
-    }
-  }, [lCat, categoriesWithPwd]);
 
   useEffect(() => {
     if (initRank < 1 || initRank > MAX_RANK) {
@@ -601,7 +594,7 @@ function ResultsContent() {
           <div>
             <SLabel>Quota</SLabel>
             <SSelect value={lQuota} onChange={setLQuota}>
-              <option value="Both">Both Quotas</option>
+              <option value="Both">Home State + All India</option>
               <option value="Home State">Home State</option>
               <option value="All India">All India</option>
             </SSelect>
@@ -615,18 +608,16 @@ function ResultsContent() {
             </SSelect>
           </div>
 
-          {categoriesWithPwd.includes(lCat) && (
-            <div>
-              <SLabel>PwD Status</SLabel>
-              <SSelect
-                value={lPwd ? "PwD" : "No PwD"}
-                onChange={(v) => setLPwd(v === "PwD")}
-              >
-                <option value="No PwD">No PwD</option>
-                <option value="PwD">PwD</option>
-              </SSelect>
-            </div>
-          )}
+          <div>
+            <SLabel>PwD Status</SLabel>
+            <SSelect
+              value={lPwd ? "PwD" : "No PwD"}
+              onChange={(v) => setLPwd(v === "PwD")}
+            >
+              <option value="No PwD">No PwD</option>
+              <option value="PwD">PwD</option>
+            </SSelect>
+          </div>
 
           <div>
             <SLabel>Round</SLabel>
@@ -640,7 +631,7 @@ function ResultsContent() {
           <div>
             <SLabel>Institute Type</SLabel>
             <SSelect value={lType} onChange={setLType}>
-              <option value="All">All Types</option>
+              <option value="All">Government + Private</option>
               <option value="Government">Government</option>
               <option value="Private">Private</option>
             </SSelect>

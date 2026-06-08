@@ -100,22 +100,15 @@ export default function PredictorPage() {
     useState<(typeof SEAT_OPTIONS)[number]>("WBJEE Seats");
   const [round, setRound] =
     useState<(typeof ROUND_OPTIONS)[number]>("All Rounds");
+  const [type, setType] = useState<"All Types" | "Government" | "Private">("All Types");
   const [pwd, setPwd] = useState<"No PwD" | "PwD">("No PwD");
   const [rankError, setRankError] = useState("");
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  const categoriesWithPwd = useMemo(() => getCategoriesWithPwd(), []);
-
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  useEffect(() => {
-    if (!categoriesWithPwd.includes(category)) {
-      setPwd("No PwD");
-    }
-  }, [category, categoriesWithPwd]);
 
   const validateRank = useCallback((raw: string): string => {
     if (!raw) return "";
@@ -166,6 +159,7 @@ export default function PredictorPage() {
       seatType,
       round,
       pwd: pwd === "PwD" ? "true" : "false",
+      type,
     });
 
     router.push(`/results?${params.toString()}`);
@@ -330,19 +324,17 @@ export default function PredictorPage() {
 
               {/* PwD Status + Seat Type */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {categoriesWithPwd.includes(category) && (
-                  <div>
-                    <FieldLabel>PwD Status</FieldLabel>
-                    <ToggleGroup
-                      options={[
-                        { value: "No PwD" as const, label: "No PwD" },
-                        { value: "PwD" as const, label: "PwD" },
-                      ]}
-                      value={pwd}
-                      onChange={(v) => setPwd(v as "No PwD" | "PwD")}
-                    />
-                  </div>
-                )}
+                <div>
+                  <FieldLabel>PwD Status</FieldLabel>
+                  <ToggleGroup
+                    options={[
+                      { value: "No PwD" as const, label: "No PwD" },
+                      { value: "PwD" as const, label: "PwD" },
+                    ]}
+                    value={pwd}
+                    onChange={(v) => setPwd(v as "No PwD" | "PwD")}
+                  />
+                </div>
 
                 <div>
                   <FieldLabel>Seat Type</FieldLabel>
@@ -358,7 +350,11 @@ export default function PredictorPage() {
               <div>
                 <FieldLabel>Domicile Quota</FieldLabel>
                 <ToggleGroup
-                  options={QUOTA_OPTIONS}
+                  options={[
+                    { value: "Both" as const, label: "Home State + All India" },
+                    { value: "Home State" as const, label: "Home State" },
+                    { value: "All India" as const, label: "All India" },
+                  ]}
                   value={quota}
                   onChange={(v) => setQuota(v as typeof quota)}
                 />
@@ -371,6 +367,20 @@ export default function PredictorPage() {
                   options={ROUND_OPTIONS}
                   value={round}
                   onChange={(v) => setRound(v as typeof round)}
+                />
+              </div>
+
+              {/* Institute Type */}
+              <div>
+                <FieldLabel>Institute Type</FieldLabel>
+                <ToggleGroup
+                  options={[
+                    { value: "All Types" as const, label: "Government + Private" },
+                    { value: "Government" as const, label: "Government" },
+                    { value: "Private" as const, label: "Private" },
+                  ]}
+                  value={type}
+                  onChange={(v) => setType(v as typeof type)}
                 />
               </div>
 

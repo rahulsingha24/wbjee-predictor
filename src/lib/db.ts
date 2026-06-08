@@ -137,11 +137,11 @@ export async function fetchCutoffsForPrediction(
     const isUserPWD = options.pwd === true;
     
     if (category === 'GENERAL_TFW') {
-       if (isUserPWD) {
-           if (isRowTFW) return true; // User wants TFW + PwD seats
-           if (rowBaseCat === 'GENERAL') return isRowPWD;
-           return false;
-       }
+        if (isUserPWD) {
+            if (isRowTFW) return isRowPWD; // Only return TFW seats if they are actually PwD
+            if (rowBaseCat === 'GENERAL') return isRowPWD;
+            return false;
+        }
        if (isRowTFW) return true; // Match TFW seats
        if (rowBaseCat === 'GENERAL') {
            if (isRowPWD) return false;
@@ -201,7 +201,23 @@ export async function fetchCutoffsForPrediction(
     }
   }
 
-  return Array.from(uniqueMap.values());
+  return Array.from(uniqueMap.values()).map(item => {
+    let displayCat = item.category;
+    if (category === 'GENERAL_TFW') {
+      if (displayCat === 'Open' || displayCat === 'Tuition Fee Waiver') {
+        displayCat = 'General+TFW';
+      } else if (displayCat === 'Open (PwD)' || displayCat === 'Tuition Fee Waiver (PwD)') {
+        displayCat = 'General+TFW (PwD)';
+      }
+    } else {
+      if (displayCat === 'Open') {
+        displayCat = 'General (Open)';
+      } else if (displayCat === 'Open (PwD)') {
+        displayCat = 'General (Open) (PwD)';
+      }
+    }
+    return { ...item, category: displayCat };
+  });
 }
 
 export const getUniqueValues = async (key: keyof CutoffRecord) => {
