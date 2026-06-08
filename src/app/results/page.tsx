@@ -138,10 +138,12 @@ function ResultsContent() {
   const initRank = Number(sp.get('rank')) || 0;
   const initCat = normalizeQueryValue(sp.get('category'), 'GENERAL');
   const initPwd = sp.get('pwd') === 'true';
-  const initQuota = normalizeQueryValue(sp.get('quota'), 'Home State');
+  const initQuota = normalizeQueryValue(sp.get('quota'), 'Both');
   const initRound = normalizeQueryValue(sp.get('round'), 'All Rounds');
   const initSeat = normalizeQueryValue(sp.get('seatType'), 'WBJEE Seats');
   const initProgram = normalizeQueryValue(sp.get('program'), 'All');
+  const initDistrict = normalizeQueryValue(sp.get('district'), 'All');
+  const initChance = normalizeQueryValue(sp.get('chance'), 'All');
 
   const { user, savePrediction } = useUserStore();
 
@@ -161,8 +163,8 @@ function ResultsContent() {
   const [lRound, setLRound] = useState(initRound);
   const [lSeat, setLSeat] = useState(initSeat);
   const [lProgram, setLProgram] = useState(initProgram);
-  const [lDistrict, setLDistrict] = useState('All');
-  const [lChance, setLChance] = useState('All');
+  const [lDistrict, setLDistrict] = useState(initDistrict);
+  const [lChance, setLChance] = useState(initChance);
   const [rankErr, setRankErr] = useState('');
 
   const categoriesWithPwd = useMemo(() => getCategoriesWithPwd(), []);
@@ -179,10 +181,10 @@ function ResultsContent() {
     setLRound(initRound);
     setLSeat(initSeat);
     setLProgram(initProgram);
-    setLDistrict('All');
-    setLChance('All');
+    setLDistrict(initDistrict);
+    setLChance(initChance);
     setPage(1);
-  }, [initRank, initCat, initPwd, initQuota, initRound, initSeat, initProgram]);
+  }, [initRank, initCat, initPwd, initQuota, initRound, initSeat, initProgram, initDistrict, initChance]);
 
   // Reset lPwd if category is changed to one without PwD options
   useEffect(() => {
@@ -240,15 +242,25 @@ function ResultsContent() {
     }
     setRankErr('');
     setPage(1);
-    router.push(`/results?${new URLSearchParams({ rank: lRank, category: lCat, pwd: lPwd ? 'true' : 'false', quota: lQuota, seatType: lSeat, round: lRound })}`, { scroll: false });
+    router.push(`/results?${new URLSearchParams({ 
+      rank: lRank, 
+      category: lCat, 
+      pwd: lPwd ? 'true' : 'false', 
+      quota: lQuota, 
+      seatType: lSeat, 
+      round: lRound,
+      program: lProgram,
+      district: lDistrict,
+      chance: lChance
+    })}`, { scroll: false });
     setBottomSheetOpen(false);
-  }, [lRank, lCat, lPwd, lQuota, lSeat, lRound, router]);
+  }, [lRank, lCat, lPwd, lQuota, lSeat, lRound, lProgram, lDistrict, lChance, router]);
 
   const handleReset = () => {
     setLRank('');
     setLCat('GENERAL');
     setLPwd(false);
-    setLQuota('Home State');
+    setLQuota('Both');
     setLRound('All Rounds');
     setLSeat('WBJEE Seats');
     setLProgram('All');
@@ -389,6 +401,7 @@ function ResultsContent() {
         <div>
           <SLabel>Quota</SLabel>
           <SSelect value={lQuota} onChange={setLQuota}>
+            <option value="Both">Both Quotas</option>
             <option value="Home State">Home State</option>
             <option value="All India">All India</option>
           </SSelect>
@@ -509,7 +522,14 @@ function ResultsContent() {
         <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
 
           {/* Desktop sidebar — sticky */}
-          <div className="hidden lg:block" style={{ width: 260, flexShrink: 0, position: 'sticky', top: 80 }}>
+          <div className="hidden lg:block" style={{ 
+            width: 260, 
+            flexShrink: 0, 
+            position: 'sticky', 
+            top: 80,
+            maxHeight: 'calc(100vh - 100px)',
+            overflowY: 'auto'
+          }}>
             {FilterPanel}
           </div>
 

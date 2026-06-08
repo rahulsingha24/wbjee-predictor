@@ -86,8 +86,6 @@ html.light {
 
   html {
     scroll-behavior: smooth;
-    /* Prevent horizontal overflow at root level */
-    overflow-x: hidden;
     max-width: 100%;
   }
 
@@ -97,7 +95,6 @@ html.light {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    overflow-x: hidden;
     max-width: 100vw;
     line-height: 1.6;
     transition: background-color 0.25s ease, color 0.25s ease;

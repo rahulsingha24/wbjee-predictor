@@ -21,7 +21,7 @@ const CATEGORIES: { value: string; label: string }[] = [
   { value: 'ST',          label: 'ST'             },
 ];
 
-const QUOTA_OPTIONS  = ['Home State', 'All India'] as const;
+const QUOTA_OPTIONS  = ['Both', 'Home State', 'All India'] as const;
 const SEAT_OPTIONS = ['WBJEE Seats', 'JEE(Main) Seats'] as const;
 const ROUND_OPTIONS  = ['All Rounds', 'Round 1', 'Round 2'] as const;
 
@@ -98,7 +98,7 @@ export default function PredictorPage() {
 
   const [rankRaw,  setRankRaw]  = useState('');
   const [category, setCategory] = useState('GENERAL');
-  const [quota,    setQuota]    = useState<'Home State' | 'All India'>('Home State');
+  const [quota,    setQuota]    = useState<typeof QUOTA_OPTIONS[number]>('Both');
   const [seatType, setSeatType] = useState<'WBJEE Seats' | 'JEE(Main) Seats'>('WBJEE Seats');
   const [round,    setRound]    = useState<'All Rounds' | 'Round 1' | 'Round 2'>('All Rounds');
   const [pwd,      setPwd]      = useState(false);

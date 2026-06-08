@@ -164,13 +164,9 @@ export async function fetchCutoffsForPrediction(
     filtered = filtered.filter(item => matchesText(item.round, options.round));
   }
 
-  /* 3. Quota — Home State candidates can also apply for All India seats */
-  if (options.quota && options.quota !== 'All' && options.quota !== 'All Quotas') {
-    if (options.quota === 'Home State') {
-      filtered = filtered.filter(item => matchesText(item.quota, 'Home State') || matchesText(item.quota, 'All India'));
-    } else {
-      filtered = filtered.filter(item => matchesText(item.quota, options.quota));
-    }
+  /* 3. Quota — strict separation based on selection */
+  if (options.quota && options.quota !== 'All' && options.quota !== 'All Quotas' && options.quota !== 'Both') {
+    filtered = filtered.filter(item => matchesText(item.quota, options.quota));
   }
 
   /* Seat Type */
@@ -197,7 +193,8 @@ export async function fetchCutoffsForPrediction(
   /* 7. Deduplication: keep best (lowest) closing rank per unique slot */
   const uniqueMap = new Map<string, CutoffRecord>();
   for (const item of filtered) {
-    const key = `${item.institute}||${item.program}||${item.quota}||${item.category}||${item.round}`;
+    const seatT = (item as any).officialSeatType || item.seatType || 'Unknown';
+    const key = `${item.institute}||${item.program}||${item.quota}||${item.category}||${item.round}||${seatT}`;
     const existing = uniqueMap.get(key);
     if (!existing || item.closingRank < existing.closingRank) {
       uniqueMap.set(key, item);
