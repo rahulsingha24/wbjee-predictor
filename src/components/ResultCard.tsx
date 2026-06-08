@@ -48,8 +48,8 @@ export default function ResultCard({ college, userRank }: { college: PredictionR
   return (
     <div
       style={{
-        background:   'var(--rc-bg)',
-        border:       `1px solid var(--rc-border)`,
+        background:   'var(--card-bg)',
+        border:       `1px solid var(--border-solid)`,
         borderLeft:   `3px solid ${cfg.ringColor}`,
         borderRadius: 14,
         padding:      '16px',
@@ -128,8 +128,8 @@ export default function ResultCard({ college, userRank }: { college: PredictionR
           display:      'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
           gap:          0,
-          background:   'var(--rc-stats-bg)',
-          border:       '1px solid var(--rc-stats-border)',
+          background:   'var(--input-bg)',
+          border:       '1px solid var(--border-solid)',
           borderRadius: 10,
           overflow:     'hidden',
           marginTop:    4,
@@ -145,7 +145,7 @@ export default function ResultCard({ college, userRank }: { college: PredictionR
             style={{
               padding:     '10px 4px',
               textAlign:   'center',
-              borderRight: i < 2 ? '1px solid var(--rc-stats-border)' : 'none',
+              borderRight: i < 2 ? '1px solid var(--border-solid)' : 'none',
               minWidth:    0,
             }}
           >
