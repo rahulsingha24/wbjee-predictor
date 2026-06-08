@@ -45,6 +45,23 @@ export default function ResultCard({ college, userRank }: { college: PredictionR
 
   const cfg = chanceConfig[college.predictionLevel] ?? chanceConfig.NO_DATA;
 
+  const rawCat = college.category || '';
+  const hasPwDStr = rawCat.toLowerCase().includes('pwd');
+  const hasTFWStr = rawCat.includes('TFW') || rawCat.includes('Tuition Fee Waiver') || rawCat === 'GENERAL_TFW';
+  
+  const isActualTFW = college.isTFW || hasTFWStr;
+  const isActualPWD = college.isPWD || hasPwDStr;
+
+  let baseCat = rawCat.replace(/\s*\(PwD\)\s*/gi, '').trim();
+
+  if (isActualTFW) {
+    baseCat = 'TFW';
+  } else if (baseCat === 'GENERAL' || baseCat === 'General (Open)' || baseCat === 'Open' || baseCat === 'General') {
+    baseCat = 'General (Open)';
+  }
+
+  const displayCategory = isActualPWD ? `${baseCat} (PwD)` : baseCat;
+
   return (
     <div
       style={{
@@ -195,7 +212,7 @@ export default function ResultCard({ college, userRank }: { college: PredictionR
             📍 {college.district}
           </span>
         )}
-        {college.category && (
+        {displayCategory && (
           <span
             style={{
               fontSize:     11,
@@ -207,7 +224,7 @@ export default function ResultCard({ college, userRank }: { college: PredictionR
               whiteSpace:   'nowrap',
             }}
           >
-            {college.category}
+            {displayCategory}
           </span>
         )}
         {college.quota && (
@@ -223,36 +240,6 @@ export default function ResultCard({ college, userRank }: { college: PredictionR
             }}
           >
             {college.quota}
-          </span>
-        )}
-        {college.isTFW && (
-          <span
-            style={{
-              fontSize:     11,
-              padding:      '2px 8px',
-              borderRadius: 50,
-              background:   'rgba(245,158,11,0.10)',
-              color:        '#f59e0b',
-              border:       '1px solid rgba(245,158,11,0.25)',
-              whiteSpace:   'nowrap',
-            }}
-          >
-            TFW
-          </span>
-        )}
-        {college.isPWD && (
-          <span
-            style={{
-              fontSize:     11,
-              padding:      '2px 8px',
-              borderRadius: 50,
-              background:   'rgba(59,130,246,0.10)',
-              color:        '#3b82f6',
-              border:       '1px solid rgba(59,130,246,0.25)',
-              whiteSpace:   'nowrap',
-            }}
-          >
-            PwD
           </span>
         )}
       </div>

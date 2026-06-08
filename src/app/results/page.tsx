@@ -38,7 +38,7 @@ const PAGE_SIZE = 20;
 
 const CATEGORIES = [
   { value: "GENERAL", label: "General (Open)" },
-  { value: "GENERAL_TFW", label: "General + TFW" },
+  { value: "GENERAL_TFW", label: "TFW" },
   { value: "EWS", label: "EWS" },
   { value: "OBC-A", label: "OBC-A" },
   { value: "OBC-B", label: "OBC-B" },
@@ -285,12 +285,12 @@ function ResultsContent() {
   const filtered = useMemo(
     () =>
       results.filter((r) => {
-        if (lProgram !== "All" && r.program !== lProgram) return false;
-        if (lDistrict !== "All" && r.district !== lDistrict) return false;
-        if (lChance !== "All" && r.predictionLevel !== lChance) return false;
+        if (initProgram !== "All" && r.program !== initProgram) return false;
+        if (initDistrict !== "All" && r.district !== initDistrict) return false;
+        if (initChance !== "All" && r.predictionLevel !== initChance) return false;
         return true;
       }),
-    [results, lProgram, lDistrict, lChance]
+    [results, initProgram, initDistrict, initChance]
   );
 
   const paginated = useMemo(
@@ -379,9 +379,9 @@ function ResultsContent() {
       pwdStatus: initPwd ? "PwD" : "No PwD",
       round: initRound,
       instituteType: initType,
-      chanceLevel: lChance,
-      program: lProgram,
-      district: lDistrict,
+      chanceLevel: initChance,
+      program: initProgram,
+      district: initDistrict,
       name: user?.name,
     });
 

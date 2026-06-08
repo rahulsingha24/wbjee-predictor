@@ -13,7 +13,7 @@ const MIN_RANK = 1;
 
 const CATEGORIES: { value: string; label: string }[] = [
   { value: "GENERAL", label: "General (Open)" },
-  { value: "GENERAL_TFW", label: "General + TFW" },
+  { value: "GENERAL_TFW", label: "TFW" },
   { value: "EWS", label: "EWS" },
   { value: "OBC-A", label: "OBC-A" },
   { value: "OBC-B", label: "OBC-B" },
@@ -100,7 +100,6 @@ export default function PredictorPage() {
     useState<(typeof SEAT_OPTIONS)[number]>("WBJEE Seats");
   const [round, setRound] =
     useState<(typeof ROUND_OPTIONS)[number]>("All Rounds");
-  const [type, setType] = useState<"All Types" | "Government" | "Private">("All Types");
   const [pwd, setPwd] = useState<"No PwD" | "PwD">("No PwD");
   const [rankError, setRankError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -159,7 +158,6 @@ export default function PredictorPage() {
       seatType,
       round,
       pwd: pwd === "PwD" ? "true" : "false",
-      type,
     });
 
     router.push(`/results?${params.toString()}`);
@@ -367,20 +365,6 @@ export default function PredictorPage() {
                   options={ROUND_OPTIONS}
                   value={round}
                   onChange={(v) => setRound(v as typeof round)}
-                />
-              </div>
-
-              {/* Institute Type */}
-              <div>
-                <FieldLabel>Institute Type</FieldLabel>
-                <ToggleGroup
-                  options={[
-                    { value: "All Types" as const, label: "Government + Private" },
-                    { value: "Government" as const, label: "Government" },
-                    { value: "Private" as const, label: "Private" },
-                  ]}
-                  value={type}
-                  onChange={(v) => setType(v as typeof type)}
                 />
               </div>
 

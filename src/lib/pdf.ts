@@ -170,7 +170,14 @@ export function generatePredictionPDF(
     doc.text(doc.splitTextToSize(r.program, cols.branch.w)[0] || '', cols.branch.x, y);
     doc.text(r.openingRank.toLocaleString(), cols.or.x, y);
     doc.text(r.closingRank.toLocaleString(), cols.cr.x, y);
-    doc.text(r.category, cols.cat.x, y);
+
+    let catText = r.category;
+    if (['GENERAL_TFW', 'General+TFW', 'General + TFW', 'Tuition Fee Waiver', 'TFW'].includes(catText) || r.isTFW) {
+      catText = 'TFW';
+    } else if (['GENERAL', 'General (Open)', 'Open'].includes(catText)) {
+      catText = 'Open';
+    }
+    doc.text(catText, cols.cat.x, y);
 
     const quotaShort = r.quota === 'Home State' ? 'HS' : (r.quota === 'All India' ? 'AI' : 'Both');
     doc.text(quotaShort, cols.quota.x, y);
