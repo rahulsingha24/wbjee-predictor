@@ -57,7 +57,7 @@ function ToggleGroup<T extends string>({
             key={opt.value}
             type="button"
             onClick={() => onChange(opt.value)}
-            className={`w-full min-w-0 px-2 py-2 rounded-lg text-[10px] sm:text-[11px] md:text-xs font-semibold whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
+            className={`w-full min-w-0 px-1.5 sm:px-2 py-2 rounded-lg text-[10px] sm:text-[11px] md:text-xs font-semibold whitespace-normal leading-tight text-center break-words focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 ${
               active
                 ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_0_12px_rgba(37,99,235,0.3)]"
                 : "bg-transparent hover:opacity-80"
