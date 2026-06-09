@@ -27,11 +27,24 @@ import Link from "next/link";
 import ResultCard from "@/components/ResultCard";
 import localCutoffs from "@/data/cutoffs.json";
 
+const cleanProgramName = (program?: string) => {
+  if (!program) return "";
+
+  return program
+    .replace(/\s*-\s*TFW\s*$/i, "")
+    .replace(/\s*\(TFW\)\s*$/i, "")
+    .replace(/\s+TFW\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+};
+
 const ALL_PROGRAMS = Array.from(
-  new Set((localCutoffs as any[]).map((d) => d.program))
-)
-  .filter(Boolean)
-  .sort() as string[];
+  new Set(
+    (localCutoffs as any[])
+      .map((d) => cleanProgramName(d.program))
+      .filter(Boolean)
+  )
+).sort() as string[];
 
 const MAX_RANK = 150000;
 const PAGE_SIZE = 20;
@@ -189,7 +202,9 @@ function ResultsContent() {
   const initQuota = normalizeQueryValue(sp.get("quota"), "Both");
   const initRound = normalizeQueryValue(sp.get("round"), "All Rounds");
   const initSeat = normalizeQueryValue(sp.get("seatType"), "WBJEE Seats");
-  const initProgram = normalizeQueryValue(sp.get("program"), "All");
+  const rawProgramParam = normalizeQueryValue(sp.get("program"), "All");
+const initProgram =
+  rawProgramParam === "All" ? "All" : cleanProgramName(rawProgramParam);
   const initDistrict = normalizeQueryValue(sp.get("district"), "All");
   const initChance = normalizeQueryValue(sp.get("chance"), "All");
   const initType = normalizeQueryValue(sp.get("type"), "All");
@@ -282,16 +297,23 @@ function ResultsContent() {
     setTimeout(() => setToast(""), 2500);
   };
 
-  const filtered = useMemo(
-    () =>
-      results.filter((r) => {
-        if (initProgram !== "All" && r.program !== initProgram) return false;
-        if (initDistrict !== "All" && r.district !== initDistrict) return false;
-        if (initChance !== "All" && r.predictionLevel !== initChance) return false;
-        return true;
-      }),
-    [results, initProgram, initDistrict, initChance]
-  );
+const filtered = useMemo(
+  () =>
+    results.filter((r) => {
+      if (
+        initProgram !== "All" &&
+        cleanProgramName(r.program) !== initProgram
+      ) {
+        return false;
+      }
+
+      if (initDistrict !== "All" && r.district !== initDistrict) return false;
+      if (initChance !== "All" && r.predictionLevel !== initChance) return false;
+
+      return true;
+    }),
+  [results, initProgram, initDistrict, initChance]
+);
 
   const paginated = useMemo(
     () => filtered.slice(0, page * PAGE_SIZE),
@@ -370,23 +392,23 @@ function ResultsContent() {
     showToast("Link copied successfully");
   };
 
-  const handleExportPDF = () => {
-    generatePredictionPDF(filtered, {
-      rank: initRank,
-      category: CATEGORIES.find(c => c.value === initCat)?.label || initCat,
-      quota: initQuota,
-      seatType: initSeat,
-      pwdStatus: initPwd ? "PwD" : "No PwD",
-      round: initRound,
-      instituteType: initType,
-      chanceLevel: initChance,
-      program: initProgram,
-      district: initDistrict,
-      name: user?.name,
-    });
+const handleExportPDF = () => {
+  generatePredictionPDF(filtered, {
+    rank: initRank,
+    category: CATEGORIES.find((c) => c.value === initCat)?.label || initCat,
+    quota: initQuota,
+    seatType: initSeat,
+    pwdStatus: initPwd ? "PwD" : "No PwD",
+    round: initRound,
+    instituteType: initType,
+    chanceLevel: initChance,
+    program: initProgram,
+    district: initDistrict,
+    name: user?.name,
+  });
 
-    showToast("Results exported successfully");
-  };
+  showToast("Results exported successfully");
+};
 
   if (!mounted) {
     return (

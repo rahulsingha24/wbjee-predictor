@@ -2,22 +2,34 @@ import { createClient } from '@supabase/supabase-js';
 import { CutoffRecord } from '@/types';
 import localCutoffs from '@/data/cutoffs.json';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://spzaghfqnyfvgqwbyuyk.supabase.co';
-const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwemFnaGZxbnlmdmdxd2J5dXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTYzOTYsImV4cCI6MjA5MTA3MjM5Nn0.ALgmfIItGKhYFji5tXkifcX5PSjzSn7LnOVEL0vkKek';
+const SUPABASE_URL =
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  'https://spzaghfqnyfvgqwbyuyk.supabase.co';
+
+const SUPABASE_KEY =
+  process.env.NEXT_PUBLIC_SUPABASE_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNwemFnaGZxbnlmdmdxd2J5dXlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0OTYzOTYsImV4cCI6MjA5MTA3MjM5Nn0.ALgmfIItGKhYFji5tXkifcX5PSjzSn7LnOVEL0vkKek';
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 type SupabaseRow = Record<string, unknown>;
-
 type NormalizedRow = Record<string, unknown>;
 
 const normalizeKey = (key: string) =>
-  key.toString().trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9]/g, '');
+  key
+    .toString()
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/[^a-z0-9]/g, '');
 
 const normalizeRow = (row: SupabaseRow): NormalizedRow => {
   const normalized: NormalizedRow = {};
+
   for (const [key, value] of Object.entries(row)) {
     normalized[normalizeKey(key)] = value;
   }
+
   return normalized;
 };
 
@@ -25,6 +37,7 @@ const parseRank = (value: string | number | undefined) => {
   if (typeof value === 'string') {
     return Number(value.replace(/,/g, '').trim()) || 0;
   }
+
   return Number(value ?? 0);
 };
 
@@ -35,34 +48,151 @@ const getStringField = (row: NormalizedRow, key: string) => {
 
 const getNumericField = (row: NormalizedRow, key: string) => {
   const value = row[normalizeKey(key)];
+
   if (typeof value === 'number') return value;
   if (typeof value === 'string') return parseRank(value);
+
   return 0;
 };
 
-const normalizeCategoryValue = (category?: string) => {
-  const value = typeof category === 'string'
-    ? category.trim().toUpperCase().replace(/\s+/g, ' ')
+const cleanText = (value?: string) =>
+  typeof value === 'string'
+    ? value.trim().toUpperCase().replace(/\s+/g, ' ')
     : '';
 
+const normalizeCategoryValue = (category?: string) => {
+  const value = cleanText(category);
+
   if (!value) return '';
-  if (value === 'OPEN' || value === 'GENERAL' || value === 'GENERAL (OPEN)' || value === 'OPEN CATEGORY') return 'GENERAL';
-  if (value === 'TFW' || value === 'TUITION FEE WAIVER' || value === 'TUITION FEE WAIVERS') return 'TFW';
-  if (/^OBC\s*[-]?\s*A$/.test(value)) return 'OBC-A';
-  if (/^OBC\s*[-]?\s*B$/.test(value)) return 'OBC-B';
-  if (value === 'SC') return 'SC';
-  if (value === 'ST') return 'ST';
-  if (value === 'EWS') return 'EWS';
+
+  if (
+    value === 'OPEN' ||
+    value === 'GENERAL' ||
+    value === 'GENERAL (OPEN)' ||
+    value === 'OPEN CATEGORY'
+  ) {
+    return 'GENERAL';
+  }
+
+  if (
+    value === 'OPEN (PWD)' ||
+    value === 'GENERAL (PWD)' ||
+    value === 'GENERAL (OPEN) (PWD)'
+  ) {
+    return 'GENERAL';
+  }
+
+  if (
+    value === 'TFW' ||
+    value === 'TUITION FEE WAIVER' ||
+    value === 'TUITION FEE WAIVERS' ||
+    value === 'TUITION FEE WAIVER (PWD)' ||
+    value === 'TFW (PWD)'
+  ) {
+    return 'TFW';
+  }
+
+  if (/^OBC\s*[-]?\s*A/.test(value)) return 'OBC-A';
+  if (/^OBC\s*[-]?\s*B/.test(value)) return 'OBC-B';
+
+  if (value.startsWith('SC')) return 'SC';
+  if (value.startsWith('ST')) return 'ST';
+  if (value.startsWith('EWS')) return 'EWS';
+
   return value;
+};
+
+const isTruthy = (value: unknown) => {
+  if (typeof value === 'boolean') return value;
+
+  if (typeof value === 'string') {
+    const v = value.trim().toUpperCase();
+    return v === 'TRUE' || v === 'YES' || v === '1';
+  }
+
+  return !!value;
+};
+
+const normalizeForCompare = (value?: string) =>
+  typeof value === 'string'
+    ? value.trim().toUpperCase().replace(/\s+/g, ' ').replace(/\W+/g, '')
+    : '';
+
+const matchesText = (value?: string, target?: string) => {
+  const a = normalizeForCompare(value);
+  const b = normalizeForCompare(target);
+
+  if (!a || !b) return false;
+
+  return a === b || a.includes(b) || b.includes(a);
+};
+
+const getRowBaseCategory = (item: CutoffRecord): string => {
+  return normalizeCategoryValue(item.category);
+};
+
+const getRowIsTFW = (item: CutoffRecord): boolean => {
+  const category = cleanText(item.category);
+  const program = cleanText(item.program);
+  const tfwStatus = cleanText((item as any).tfwStatus);
+
+  return (
+    item.isTFW === true ||
+    category === 'TUITION FEE WAIVER' ||
+    category === 'TUITION FEE WAIVER (PWD)' ||
+    category === 'TFW' ||
+    category === 'TFW (PWD)' ||
+    tfwStatus === 'YES' ||
+    program.includes('(TFW)') ||
+    program.endsWith(' TFW')
+  );
+};
+
+const getRowIsPWD = (item: CutoffRecord): boolean => {
+  const category = cleanText(item.category);
+
+  return (
+    item.isPWD === true ||
+    category.includes('PWD')
+  );
+};
+
+const getDisplayCategory = (item: CutoffRecord): string => {
+  const baseCat = getRowBaseCategory(item);
+  const isTFW = getRowIsTFW(item);
+  const isPWD = getRowIsPWD(item);
+
+  if (isTFW) {
+    return isPWD ? 'TFW (PwD)' : 'TFW';
+  }
+
+  if (baseCat === 'GENERAL') {
+    return isPWD ? 'General (Open) (PwD)' : 'General (Open)';
+  }
+
+  if (baseCat === 'OBC-A') return isPWD ? 'OBC-A (PwD)' : 'OBC-A';
+  if (baseCat === 'OBC-B') return isPWD ? 'OBC-B (PwD)' : 'OBC-B';
+  if (baseCat === 'SC') return isPWD ? 'SC (PwD)' : 'SC';
+  if (baseCat === 'ST') return isPWD ? 'ST (PwD)' : 'ST';
+  if (baseCat === 'EWS') return isPWD ? 'EWS (PwD)' : 'EWS';
+
+  return item.category || '';
 };
 
 const mapSupabaseRow = (row: SupabaseRow): CutoffRecord => {
   const normal = normalizeRow(row);
   const rawCategory = getStringField(normal, 'Category');
   const normalizedCat = normalizeCategoryValue(rawCategory);
-  
-  const isTFW = normalizedCat === 'TFW' || getStringField(normal, 'Program').includes('TFW');
-  const finalCategory = normalizedCat === 'TFW' ? 'GENERAL' : normalizedCat;
+
+  const isTFW =
+    normalizedCat === 'TFW' ||
+    getStringField(normal, 'Program').toUpperCase().includes('(TFW)');
+
+  const isPWD =
+    rawCategory.toUpperCase().includes('PWD') ||
+    getStringField(normal, 'PwD').toUpperCase() === 'TRUE';
+
+  const finalCategory = normalizedCat === 'TFW' ? 'Tuition Fee Waiver' : rawCategory;
 
   return {
     id: getStringField(normal, 'Sr.No') || getStringField(normal, 'Institute') || '',
@@ -71,7 +201,8 @@ const mapSupabaseRow = (row: SupabaseRow): CutoffRecord => {
     program: getStringField(normal, 'Program'),
     quota: getStringField(normal, 'Quota'),
     category: finalCategory,
-    isTFW: isTFW,
+    isTFW,
+    isPWD,
     openingRank: getNumericField(normal, 'Opening Rank'),
     closingRank: getNumericField(normal, 'Closing Rank'),
     stream: getStringField(normal, 'Stream'),
@@ -81,167 +212,172 @@ const mapSupabaseRow = (row: SupabaseRow): CutoffRecord => {
 
 /* ─── Raw data loader ────────────────────────────────────────────────────── */
 export async function fetchAllCutoffs(): Promise<CutoffRecord[]> {
-  // Use local data which is complete and verified
-  return (localCutoffs as any[]).map(item => ({
-    ...item,
-    openingRank: typeof item.openingRank === 'string' ? parseInt(item.openingRank.replace(/,/g, ''), 10) || 0 : item.openingRank,
-    closingRank: typeof item.closingRank === 'string' ? parseInt(item.closingRank.replace(/,/g, ''), 10) || 0 : item.closingRank,
-    isTFW: typeof item.isTFW === 'string' ? item.isTFW.toUpperCase() === 'TRUE' : !!item.isTFW,
-    isPWD: typeof item.isPWD === 'string' ? item.isPWD.toUpperCase() === 'TRUE' : !!item.isPWD,
-  })) as CutoffRecord[];
+  return (localCutoffs as any[]).map((item) => {
+    const openingRank =
+      typeof item.openingRank === 'string'
+        ? parseInt(item.openingRank.replace(/,/g, ''), 10) || 0
+        : Number(item.openingRank ?? 0);
+
+    const closingRank =
+      typeof item.closingRank === 'string'
+        ? parseInt(item.closingRank.replace(/,/g, ''), 10) || 0
+        : Number(item.closingRank ?? 0);
+
+    const normalizedItem = {
+      ...item,
+      openingRank,
+      closingRank,
+      isTFW: isTruthy(item.isTFW) || cleanText(item.category) === 'TUITION FEE WAIVER',
+      isPWD: isTruthy(item.isPWD) || cleanText(item.category).includes('PWD'),
+      seatType: item.seatType || item.officialSeatType || '',
+    };
+
+    return normalizedItem;
+  }) as CutoffRecord[];
 }
 
 /* ─── Prediction fetch ───────────────────────────────────────────────────── */
 export async function fetchCutoffsForPrediction(
   category: string,
   options: {
-    round?:     string;
-    quota?:     string;
-    type?:      string;
-    program?:   string;
-    district?:  string;
-    pwd?:       boolean;
-    seatType?:  string;
+    round?: string;
+    quota?: string;
+    type?: string;
+    program?: string;
+    district?: string;
+    pwd?: boolean;
+    seatType?: string;
   }
 ): Promise<CutoffRecord[]> {
-
   const allData = await fetchAllCutoffs();
 
-  const normalizeFilter = (value?: string) =>
-    typeof value === 'string'
-      ? value.trim().toUpperCase().replace(/\s+/g, ' ').replace(/\W+/g, '')
-      : '';
+  const selectedCategory = category || 'GENERAL';
+  const userWantsPWD = options.pwd === true;
 
-  const matchesText = (value?: string, target?: string) => {
-    const a = normalizeFilter(value);
-    const b = normalizeFilter(target);
-    return a === b || a.includes(b) || b.includes(a);
-  };
+  /* 
+    IMPORTANT ACCURACY RULES:
 
-  /* 1. Category — Support PWD and GENERAL_TFW correctly based on row data */
-  let filtered = allData.filter(item => {
-    const rawCat = (item.category || '').trim();
-    let rowBaseCat = '';
-    
-    if (rawCat.includes('Open')) rowBaseCat = 'GENERAL';
-    else if (rawCat.includes('OBC - A')) rowBaseCat = 'OBC-A';
-    else if (rawCat.includes('OBC - B')) rowBaseCat = 'OBC-B';
-    else if (rawCat.includes('SC')) rowBaseCat = 'SC';
-    else if (rawCat.includes('ST')) rowBaseCat = 'ST';
-    else if (rawCat.includes('EWS')) rowBaseCat = 'EWS';
-    else if (rawCat === 'Tuition Fee Waiver') rowBaseCat = 'TFW';
-    
-    const isRowPWD = item.isPWD === true || rawCat.includes('PwD');
-    const isRowTFW = item.isTFW === true || rawCat === 'Tuition Fee Waiver';
-    
-    const isUserPWD = options.pwd === true;
-    
-    if (category === 'GENERAL_TFW') {
-        if (isUserPWD) {
-            if (isRowTFW) return isRowPWD; // Only return TFW seats if they are actually PwD
-            if (rowBaseCat === 'GENERAL') return isRowPWD;
-            return false;
-        }
-       if (isRowTFW) return true; // Match TFW seats
-       if (rowBaseCat === 'GENERAL') {
-           if (isRowPWD) return false;
-           return true; 
-       }
-       return false;
+    GENERAL + No PwD:
+      Only Open/General rows, no TFW, no PwD.
+
+    GENERAL + PwD:
+      Only Open/General PwD rows, no TFW.
+
+    GENERAL_TFW + No PwD:
+      Only TFW rows, no normal Open/General, no PwD.
+
+    GENERAL_TFW + PwD:
+      Only TFW + PwD rows.
+      If dataset has no TFW PwD rows, return empty.
+      Do NOT fall back to General PwD.
+
+    SC/ST/EWS/OBC:
+      Only their own category.
+      PwD true means only that category PwD.
+      PwD false excludes PwD.
+  */
+  let filtered = allData.filter((item) => {
+    const rowBaseCat = getRowBaseCategory(item);
+    const rowIsTFW = getRowIsTFW(item);
+    const rowIsPWD = getRowIsPWD(item);
+
+    if (selectedCategory === 'GENERAL_TFW') {
+      return rowIsTFW && rowIsPWD === userWantsPWD;
     }
-    
-    if (rowBaseCat === category) {
-       if (isUserPWD) return isRowPWD; // ONLY return PwD seats if user checked PwD
-       if (isRowPWD) return false;     // Hide PwD seats if user didn't check PwD
-       return true;
+
+    if (selectedCategory === 'GENERAL') {
+      return rowBaseCat === 'GENERAL' && !rowIsTFW && rowIsPWD === userWantsPWD;
     }
-    
-    return false;
+
+    return rowBaseCat === selectedCategory && !rowIsTFW && rowIsPWD === userWantsPWD;
   });
 
-  /* 2. Round */
+  /* Round */
   if (options.round && options.round !== 'All Rounds') {
-    filtered = filtered.filter(item => matchesText(item.round, options.round));
+    filtered = filtered.filter((item) => matchesText(item.round, options.round));
   }
 
-  /* 3. Quota — strict separation based on selection */
-  if (options.quota && options.quota !== 'All' && options.quota !== 'All Quotas' && options.quota !== 'Both') {
-    filtered = filtered.filter(item => matchesText(item.quota, options.quota));
+  /* Quota */
+  if (
+    options.quota &&
+    options.quota !== 'All' &&
+    options.quota !== 'All Quotas' &&
+    options.quota !== 'Both' &&
+    options.quota !== 'Home State + All India'
+  ) {
+    filtered = filtered.filter((item) => matchesText(item.quota, options.quota));
   }
 
   /* Seat Type */
   if (options.seatType && options.seatType !== 'All') {
-    // some cutoffs have `officialSeatType` and some might use `seatType` from old mappings
-    filtered = filtered.filter(item => matchesText((item as any).officialSeatType || item.seatType, options.seatType));
+    filtered = filtered.filter((item) =>
+      matchesText((item as any).officialSeatType || item.seatType, options.seatType)
+    );
   }
 
-  /* 4. Institute type */
-  if (options.type && options.type !== 'All') {
-    filtered = filtered.filter(item => matchesText(item.type, options.type));
+  /* Institute Type */
+  if (options.type && options.type !== 'All' && options.type !== 'All Types') {
+    filtered = filtered.filter((item) => matchesText(item.type, options.type));
   }
 
-  /* 5. Program */
-  if (options.program && options.program !== 'All') {
-    filtered = filtered.filter(item => matchesText(item.program, options.program));
+  /* Program */
+  if (options.program && options.program !== 'All' && options.program !== 'All Branches') {
+    filtered = filtered.filter((item) => matchesText(item.program, options.program));
   }
 
-  /* 6. District */
-  if (options.district && options.district !== 'All') {
-    filtered = filtered.filter(item => matchesText(item.district, options.district));
+  /* District */
+  if (options.district && options.district !== 'All' && options.district !== 'All Districts') {
+    filtered = filtered.filter((item) => matchesText(item.district, options.district));
   }
 
-  /* 7. Deduplication: keep best (lowest) closing rank per unique slot */
+  /*
+    Deduplication:
+    Keep the best row for the exact same slot.
+    Include TFW/PwD in key so different seat categories never collapse into each other.
+  */
   const uniqueMap = new Map<string, CutoffRecord>();
+
   for (const item of filtered) {
-    const seatT = (item as any).officialSeatType || item.seatType || 'Unknown';
-    const key = `${item.institute}||${item.program}||${item.quota}||${item.category}||${item.round}||${seatT}`;
+    const seatType = (item as any).officialSeatType || item.seatType || 'Unknown';
+    const rowIsTFW = getRowIsTFW(item) ? 'TFW' : 'NON_TFW';
+    const rowIsPWD = getRowIsPWD(item) ? 'PWD' : 'NON_PWD';
+
+    const key = [
+      item.institute,
+      item.program,
+      item.quota,
+      item.category,
+      item.round,
+      seatType,
+      rowIsTFW,
+      rowIsPWD,
+    ].join('||');
+
     const existing = uniqueMap.get(key);
+
     if (!existing || item.closingRank < existing.closingRank) {
       uniqueMap.set(key, item);
     }
   }
 
-  return Array.from(uniqueMap.values()).map(item => {
-    let displayCat = item.category;
-    if (category === 'GENERAL_TFW') {
-      if (displayCat === 'Open' || displayCat === 'Tuition Fee Waiver') {
-        displayCat = 'General+TFW';
-      } else if (displayCat === 'Open (PwD)' || displayCat === 'Tuition Fee Waiver (PwD)') {
-        displayCat = 'General+TFW (PwD)';
-      }
-    } else {
-      if (displayCat === 'Open') {
-        displayCat = 'General (Open)';
-      } else if (displayCat === 'Open (PwD)') {
-        displayCat = 'General (Open) (PwD)';
-      }
-    }
-    return { ...item, category: displayCat };
-  });
+  return Array.from(uniqueMap.values()).map((item) => ({
+    ...item,
+    category: getDisplayCategory(item),
+    isTFW: getRowIsTFW(item),
+    isPWD: getRowIsPWD(item),
+    seatType: (item as any).officialSeatType || item.seatType || '',
+  }));
 }
 
 export const getUniqueValues = async (key: keyof CutoffRecord) => {
   const data = await fetchAllCutoffs();
-  return Array.from(new Set(data.map(item => String(item[key] ?? '')))).sort();
+  return Array.from(new Set(data.map((item) => String(item[key] ?? '')))).sort();
 };
 
+/*
+  Keep PwD visible for all categories in UI.
+  This function may still be used by pages, so returning all categories prevents hiding.
+*/
 export const getCategoriesWithPwd = (): string[] => {
-  const pwdCats = new Set<string>();
-  (localCutoffs as any[]).forEach(item => {
-    const isRowPWD = item.isPWD === 'TRUE' || item.isPWD === true || (item.category || '').includes('PwD');
-    if (isRowPWD) {
-      const rawCat = (item.category || '').trim();
-      if (rawCat.includes('Open')) pwdCats.add('GENERAL');
-      else if (rawCat.includes('OBC - A')) pwdCats.add('OBC-A');
-      else if (rawCat.includes('OBC - B')) pwdCats.add('OBC-B');
-      else if (rawCat.includes('SC')) pwdCats.add('SC');
-      else if (rawCat.includes('ST')) pwdCats.add('ST');
-      else if (rawCat.includes('EWS')) pwdCats.add('EWS');
-    }
-  });
-  // GENERAL_TFW uses GENERAL's PwD seats too
-  if (pwdCats.has('GENERAL')) {
-    pwdCats.add('GENERAL_TFW');
-  }
-  return Array.from(pwdCats);
+  return ['GENERAL', 'GENERAL_TFW', 'EWS', 'OBC-A', 'OBC-B', 'SC', 'ST'];
 };
