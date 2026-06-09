@@ -67,7 +67,11 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
 
     try {
-      const uid = auth?.currentUser?.uid || user?.email; // Fallback to email if auth isn't perfectly synced in store
+      const uid = auth?.currentUser?.uid;
+
+if (isFirebaseConfigured && (!db || !uid)) {
+  throw new Error('Authentication not ready. Please login again.');
+} // Fallback to email if auth isn't perfectly synced in store
       if (isFirebaseConfigured && db && uid) {
         await setDoc(doc(db, 'users', uid), {
           displayName: finalName,

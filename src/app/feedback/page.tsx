@@ -59,7 +59,11 @@ export default function FeedbackPage() {
 
     try {
       if (isFirebaseConfigured && db) {
-        const uid = auth?.currentUser?.uid || '';
+        const uid = auth?.currentUser?.uid;
+
+if (!uid) {
+  throw new Error('Authentication not ready. Please login again.');
+}
         await addDoc(collection(db, 'feedback'), {
           uid,
           userName: user?.name || 'Anonymous',
