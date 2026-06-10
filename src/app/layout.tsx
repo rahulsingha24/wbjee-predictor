@@ -11,6 +11,12 @@ export const metadata: Metadata = {
   keywords:
     'Future Engineers, WBJEE College Predictor 2026, WBJEE 2026, WBJEE counselling, WBJEE cutoff, engineering colleges West Bengal',
 
+  icons: {
+    icon: '/future-engineers-logo-v2.png',
+    shortcut: '/future-engineers-logo-v2.png',
+    apple: '/future-engineers-logo-v2.png',
+  },
+
   openGraph: {
     title: 'Future Engineers – WBJEE College Predictor 2026',
     description:
