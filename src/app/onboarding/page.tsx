@@ -140,7 +140,7 @@ if (isFirebaseConfigured && (!db || !uid)) {
                   else if (name.trim().length < 2) setNameError("Name must be at least 2 characters long.");
                 }}
                 className="w-full px-4 py-3.5 rounded-xl font-medium text-sm outline-none transition-all duration-200"
-                placeholder="e.g. Rahul Kumar Singha"
+                placeholder="e.g. Arka Kumar Sen"
                 style={{
                   background: 'var(--input-bg)',
                   border: `1.5px solid ${nameError ? '#ef4444' : 'var(--border-solid)'}`,

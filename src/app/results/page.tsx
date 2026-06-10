@@ -392,8 +392,8 @@ const filtered = useMemo(
     showToast("Link copied successfully");
   };
 
-const handleExportPDF = () => {
-  generatePredictionPDF(filtered, {
+const handleExportPDF = async () => {
+  await generatePredictionPDF(filtered, {
     rank: initRank,
     category: CATEGORIES.find((c) => c.value === initCat)?.label || initCat,
     quota: initQuota,

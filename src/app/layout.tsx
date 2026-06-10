@@ -5,10 +5,27 @@ import Footer from './components/Footer';
 import AuthProvider from './components/AuthProvider';
 
 export const metadata: Metadata = {
-  title: 'WBJEE College Predictor 2026 — Find Your Dream College',
+  title: 'Future Engineers – WBJEE College Predictor 2026',
   description:
-    'A highly accurate WBJEE College Predictor 2026. Estimate your admission chances using real previous-year cutoff trends and smart prediction logic.',
-  keywords: 'WBJEE, college predictor, rank predictor, WBJEE 2026, cutoff, counselling, West Bengal',
+    'For WBJEE 2026 students: discover possible colleges, branches, and admission chances using previous-year cutoff trends.',
+  keywords:
+    'Future Engineers, WBJEE College Predictor 2026, WBJEE 2026, WBJEE counselling, WBJEE cutoff, engineering colleges West Bengal',
+
+  openGraph: {
+    title: 'Future Engineers – WBJEE College Predictor 2026',
+    description:
+      'For WBJEE 2026 students: discover possible colleges, branches, and admission chances using previous-year cutoff trends.',
+    url: 'https://fe-wbjee-college-predictor.vercel.app',
+    siteName: 'Future Engineers',
+    type: 'website',
+  },
+
+  twitter: {
+    card: 'summary',
+    title: 'Future Engineers – WBJEE College Predictor 2026',
+    description:
+      'For WBJEE 2026 students: discover possible colleges, branches, and admission chances using previous-year cutoff trends.',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

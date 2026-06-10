@@ -3,8 +3,8 @@
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import {
-  ArrowRight, BarChart3, Target, SlidersHorizontal, Zap, AlertCircle,
-  GraduationCap, BookOpen, Cpu, LineChart
+  ArrowRight, BarChart3, Target, SlidersHorizontal, Zap,
+  GraduationCap, BookOpen, Cpu, LineChart, MessageCircle, Users
 } from 'lucide-react';
 
 /* ─── Reusable motion preset ─────────────────────────────────────────────── */
@@ -149,6 +149,93 @@ export default function Home() {
             </Link>
           </motion.div>
         </section>
+
+          {/* ══ WBJEE COUNSELLING GROUP ═══════════════════════════════════════ */}
+        <motion.section
+          {...fadeUpView(0.05)}
+          className="mb-16 sm:mb-24"
+        >
+          <div
+            className="glass-card rounded-2xl p-4 sm:p-5 md:p-6 overflow-hidden relative"
+            style={{
+              border: '1px solid var(--border)',
+              background: 'linear-gradient(135deg, var(--card-bg), var(--surface))',
+            }}
+          >
+            <div
+              className="absolute -top-12 -right-12 w-32 h-32 rounded-full pointer-events-none"
+              style={{
+                background: 'rgba(34,197,94,0.16)',
+                filter: 'blur(24px)',
+              }}
+            />
+
+            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
+              <div className="flex items-start gap-4">
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                  style={{
+                    background: 'rgba(34,197,94,0.12)',
+                    border: '1px solid rgba(34,197,94,0.28)',
+                  }}
+                >
+                  <MessageCircle className="w-6 h-6 text-green-500" />
+                </div>
+
+                <div>
+                  <div
+                    className="inline-flex items-center gap-1.5 mb-2 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.12em]"
+                    style={{
+                      background: 'var(--surface-hover)',
+                      color: 'var(--text-subtle)',
+                      border: '1px solid var(--border)',
+                    }}
+                  >
+                    <Users className="w-3 h-3" />
+                    WBJEE 2026 Community
+                  </div>
+
+                  <h2
+                    className="text-lg sm:text-xl md:text-2xl font-extrabold leading-tight mb-2"
+                    style={{ color: 'var(--text)' }}
+                  >
+                    Join Future Engineers Counselling Group
+                  </h2>
+
+                  <p
+                    className="text-sm leading-relaxed max-w-2xl"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    Get WBJEE 2026 counselling updates, cutoff discussions, college guidance,
+                    and important admission alerts in one student community.
+                  </p>
+
+                  <p
+                    className="text-[11px] mt-2"
+                    style={{ color: 'var(--text-subtle)' }}
+                  >
+                    Community support only. Final admission depends on official WBJEE counselling.
+                  </p>
+                </div>
+              </div>
+
+              <a
+                href="https://chat.whatsapp.com/Cw7vpumbAMfCVOJF6yF2sc"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-bold text-sm transition-all hover:-translate-y-0.5 active:scale-[0.97] shrink-0 min-h-[48px]"
+                style={{
+                  background: 'linear-gradient(135deg, #16a34a 0%, #22c55e 100%)',
+                  color: '#ffffff',
+                  boxShadow: '0 0 22px rgba(34,197,94,0.25)',
+                }}
+              >
+                Join WhatsApp Group
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        </motion.section>
 
         {/* ══ WHY USE OUR PREDICTOR ═════════════════════════════════════════ */}
         <section className="mb-16 sm:mb-24">

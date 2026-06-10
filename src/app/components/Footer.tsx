@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { GraduationCap, AlertCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 
 export default function Footer() {
@@ -25,9 +26,13 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="grid grid-cols-1 md:grid-cols-3 items-start gap-5">
           <div className="flex items-center justify-center md:justify-start gap-3">
-            <div className="bg-blue-600 p-2 rounded-xl">
-              <GraduationCap className="w-4 h-4 text-[var(--footer-text)]" />
-            </div>
+            <Image
+  src="/future-engineers-logo-v2.png"
+  alt="Future Engineers Logo"
+  width={34}
+  height={34}
+  className="h-[34px] w-[34px] object-contain"
+/>
 
             <div>
               <h3 className="font-bold text-base leading-tight text-[var(--footer-text)]">

@@ -135,7 +135,7 @@ const displayRound = (round?: string) => {
 const formatRank = (rank: number) =>
   Number(rank || 0).toLocaleString('en-IN');
 
-export function generatePredictionPDF(
+export async function generatePredictionPDF(
   results: PredictionResult[],
   userInfo: {
     rank: number;
@@ -176,6 +176,24 @@ export function generatePredictionPDF(
     red: [239, 68, 68] as [number, number, number],
   };
 
+  const loadImageAsDataUrl = async (src: string): Promise<string | null> => {
+  try {
+    const response = await fetch(src);
+    const blob = await response.blob();
+
+    return await new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = () => resolve(null);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return null;
+  }
+};
+
+const logoDataUrl = await loadImageAsDataUrl('/future-engineers-logo-v2.png');
+
   const setRGB = (rgb: [number, number, number]) => {
     doc.setTextColor(rgb[0], rgb[1], rgb[2]);
   };
@@ -211,11 +229,14 @@ export function generatePredictionPDF(
   doc.setFillColor(30, 58, 138); // #1E3A8A
   doc.rect(0, 0, pageW, 30, 'F');
 
-  // Logo box
-  doc.setFillColor(37, 99, 235); // #2563EB
+  // Future Engineers logo
+if (logoDataUrl) {
+  doc.addImage(logoDataUrl, 'PNG', margin, 5.5, 19, 19);
+} else {
+  // Fallback if logo cannot load
+  doc.setFillColor(37, 99, 235);
   doc.roundedRect(margin, 7, 16, 16, 3, 3, 'F');
 
-  // FE inside logo
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10.5);
   doc.setTextColor(255, 255, 255);
@@ -223,23 +244,28 @@ export function generatePredictionPDF(
     align: 'center',
     baseline: 'middle',
   });
+}
 
-  // Brand title with fixed spacing
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
+  // Brand title with automatic spacing
+const brandX = margin + 24;
+const brandY = 14;
 
-  doc.setTextColor(255, 255, 255);
-  doc.text('Future', margin + 21, 14);
+doc.setFont('helvetica', 'bold');
+doc.setFontSize(18);
 
-  // Properly placed right after Future, not too much gap
-  doc.setTextColor(96, 165, 250); // blue accent
-  doc.text('Engineers', margin + 43.5, 14);
+doc.setTextColor(255, 255, 255);
+doc.text('Future', brandX, brandY);
 
-  // Subtitle
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
-  doc.setTextColor(191, 219, 254);
-  doc.text('WBJEE College Predictor 2026', margin + 21, 21);
+const futureWidth = doc.getTextWidth('Future');
+
+doc.setTextColor(96, 165, 250); // blue accent
+doc.text('Engineers', brandX + futureWidth + 1.8, brandY);
+
+// Subtitle
+doc.setFont('helvetica', 'normal');
+doc.setFontSize(10);
+doc.setTextColor(191, 219, 254);
+doc.text('WBJEE College Predictor 2026', brandX, 21);
 };
 
   const addNewPage = () => {

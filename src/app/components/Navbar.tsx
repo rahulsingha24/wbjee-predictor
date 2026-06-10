@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUserStore } from '@/store/userStore';
-import { GraduationCap, Menu, X, User, Sun, Moon } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -59,9 +60,14 @@ export default function Navbar() {
 
           {/* ── Logo ── */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 min-h-0 min-w-0">
-            <div className="bg-blue-600 p-1.5 rounded-lg">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
+            <Image
+  src="/future-engineers-logo-v2.png"
+  alt="Future Engineers Logo"
+  width={36}
+  height={36}
+  priority
+  className="h-9 w-9 object-contain"
+/>
             <span className="font-bold text-lg tracking-tight" style={{ color: 'var(--text)' }}>
               Future <span className="text-blue-500">Engineers</span>
             </span>
