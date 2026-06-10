@@ -335,7 +335,7 @@ const filtered = useMemo(
     setRankErr("");
     setPage(1);
 
-    router.push(
+       router.push(
       `/results?${new URLSearchParams({
         rank: lRank,
         category: lCat,
@@ -352,6 +352,12 @@ const filtered = useMemo(
     );
 
     setBottomSheetOpen(false);
+    setIsFilterCollapsed(true);
+    showToast("Results updated successfully");
+
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
   }, [
     lRank,
     lCat,
