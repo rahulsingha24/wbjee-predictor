@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Analytics } from '@vercel/analytics/next';
 import './globals.css';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -59,11 +60,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="flex flex-col min-h-screen">
         <AuthProvider>
           <Navbar />
+
           <main className="flex-grow pt-[60px]">
-            {children}
+             {children}
           </main>
+
           <Footer />
         </AuthProvider>
+
+        <Analytics />
       </body>
     </html>
   );

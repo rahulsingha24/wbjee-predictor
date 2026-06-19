@@ -12,6 +12,7 @@
     "@heroicons/react": "^2.2.0",
     "@supabase/supabase-js": "^2.107.0",
     "@swc/helpers": "^0.5.21",
+    "@vercel/analytics": "^2.0.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "firebase": "^12.14.0",
