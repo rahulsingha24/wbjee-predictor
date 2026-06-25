@@ -9,7 +9,7 @@ A responsive web application that helps WBJEE students explore possible colleges
 ## Features
 
 * Rank-based college and branch predictions
-* Category, gender, quota, round and institute filters
+* Category, quota, round and institute filters
 * Branch and district preference filtering
 * Admission chance indicators
 * Google authentication
