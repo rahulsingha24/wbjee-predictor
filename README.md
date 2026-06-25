@@ -1,36 +1,29 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Future Engineers — WBJEE College Predictor 2026
 
-## Getting Started
+A responsive web application that helps WBJEE students explore possible colleges, branches, and admission chances using previous-year cutoff trends.
 
-First, run the development server:
+## Live Website
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+[Open Future Engineers](https://fe-wbjee-college-predictor.vercel.app)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+* Rank-based college and branch predictions
+* Category, gender, quota, round and institute filters
+* Branch and district preference filtering
+* Admission chance indicators
+* Google authentication
+* Downloadable prediction reports
+* Responsive dark and light themes
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Tech Stack
 
-## Learn More
+Next.js, TypeScript, Tailwind CSS, Firebase and Vercel.
 
-To learn more about Next.js, take a look at the following resources:
+## Contributors
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Developed by [me](https://github.com/rahulsingha24) and [Surya Kanta Pal](https://github.com/SKPal2024).
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Disclaimer
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Predictions are based on previous-year cutoff trends and are intended only for guidance. This project is not affiliated with WBJEEB.
